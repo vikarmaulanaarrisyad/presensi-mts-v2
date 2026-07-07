@@ -39,7 +39,7 @@
         Laporan Rekapitulasi Absensi Kehadiran Siswa<br>
         Sistem Sinkronisasi Cloud & Rekap Otomatis
         <div class="sub-judul-laporan">
-            Periode Bulan: <strong>{{ $namaBulan ?? 'Bulan Ini' }}</strong> | Kelas: <strong>{{ $kelas ?? 'Semua Kelas' }}</strong>
+            Periode: <strong>{{ $periodeFormat ?? 'Periode Ini' }}</strong> | Kelas: <strong>{{ $kelas ?? 'Semua Kelas' }}</strong>
         </div>
     </div>
 

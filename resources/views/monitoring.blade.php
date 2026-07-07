@@ -440,8 +440,11 @@
             @endif
 
             <div class="menu-group-title">Konfigurasi</div>
+            <a href="{{ route('attendance.schedule') }}" class="menu-link {{ request()->is('pengaturan-jadwal') ? 'active' : '' }}">
+                <i class="fa-solid fa-clock"></i> <span class="menu-text">Pengaturan Jadwal</span>
+            </a>
             <a href="{{ route('devices.index') }}" class="menu-link {{ request()->is('devices*') || request()->is('data-alat*') ? 'active' : '' }}">
-                <i class="fa-solid fa-fingerprint"></i> Manajemen Alat
+                <i class="fa-solid fa-fingerprint"></i> <span class="menu-text">Manajemen Alat</span>
             </a>
             <a href="{{ route('setting.akun') }}" class="menu-link {{ request()->is('setting-akun') ? 'active' : '' }}">
                 <i class="fa-solid fa-sliders"></i> Pengaturan Akun

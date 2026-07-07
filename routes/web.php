@@ -61,6 +61,10 @@ Route::middleware(['premium'])->group(function () {
         ]);
     });
 
+    // PENGATURAN JADWAL ABSEN
+    Route::get('/pengaturan-jadwal', [\App\Http\Controllers\AttendanceScheduleController::class, 'index'])->name('attendance.schedule');
+    Route::post('/pengaturan-jadwal/update', [\App\Http\Controllers\AttendanceScheduleController::class, 'update'])->name('attendance.schedule.update');
+
     Route::get('/data-kelas', [SiswaController::class, 'dataKelas'])->name('data.kelas');
     Route::post('/kelas/store', [SiswaController::class, 'storeKelas'])->name('kelas.store');
     
@@ -86,8 +90,10 @@ Route::get('/siswa/notif-wa/{id}', [SiswaController::class, 'notif_wa'])->name('
 Route::post('/simpan-izin', [SiswaController::class, 'simpanIzin'])->name('attendance.storeManual');
 Route::post('/siswa/pengajuan-izin', [SiswaController::class, 'pengajuanIzinSiswa'])->name('siswa.pengajuan_izin');
 
-Route::get('/admin/rekap-pdf', [SiswaController::class, 'rekapPdf'])->name('admin.rekap.pdf');
-Route::get('/siswa/rekap-pdf', [SiswaController::class, 'rekapPdf'])->name('siswa.rekap_pdf');
+Route::get('/admin/rekap-pdf', [SiswaController::class, 'laporanIndex'])->name('admin.rekap.pdf');
+Route::get('/siswa/rekap-pdf', [SiswaController::class, 'laporanIndex'])->name('siswa.rekap_pdf');
+Route::post('/admin/rekap-pdf/download', [SiswaController::class, 'rekapPdf'])->name('admin.rekap.download');
+Route::post('/siswa/rekap-pdf/download', [SiswaController::class, 'rekapPdf'])->name('siswa.rekap.download');
 
 // =====================================================
 // ROUTE SETTING AKUN

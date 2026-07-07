@@ -65,7 +65,7 @@ class SiswaController extends Controller
 
         $logAbsensi = DB::table('attendances')
             ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
-            ->select('attendances.id', 'attendances.status', 'attendances.keterangan', 'attendances.created_at', 'siswas.name as nama_siswa', 'siswas.nis', 'siswas.kelas')
+            ->select('attendances.id', 'siswas.id as siswa_id', 'attendances.status', 'attendances.keterangan', 'attendances.created_at', 'siswas.name as nama_siswa', 'siswas.nis', 'siswas.kelas')
             ->whereDate('attendances.created_at', $hariIni)
             ->orderBy('attendances.created_at', 'desc')
             ->get();
@@ -476,26 +476,46 @@ class SiswaController extends Controller
         return redirect()->back()->with('success', 'Data ' . $request->status . ' untuk ' . ($siswa->name ?? '') . ' berhasil disimpan!');
     }
 
+    public function laporanIndex()
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return $redirect;
+
+        $daftarKelas = DB::table('siswas')->select('kelas')->distinct()->whereNotNull('kelas')->orderBy('kelas')->get();
+        return view('laporan', compact('daftarKelas'));
+    }
+
     public function rekapPdf(Request $request)
     {
         $redirect = $this->cekLogin();
         if ($redirect) return $redirect;
-        $bulan = $request->get('bulan', Carbon::now()->format('Y-m'));
-        $kelas = $request->get('kelas', '');
+        
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate   = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $kelas     = $request->get('kelas', '');
+        
         $query = DB::table('attendances')->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
             ->select('attendances.*', 'siswas.name as nama_siswa', 'siswas.nis', 'siswas.kelas')
-            ->whereRaw("DATE_FORMAT(attendances.created_at, '%Y-%m') = ?", [$bulan]);
-        if ($kelas) { $query->where('siswas.kelas', $kelas); }
+            ->whereDate('attendances.created_at', '>=', $startDate)
+            ->whereDate('attendances.created_at', '<=', $endDate);
+            
+        if ($kelas) { 
+            $query->where('siswas.kelas', $kelas); 
+        }
+        
         $dataAbsensi  = $query->orderBy('siswas.kelas')->orderBy('siswas.name')->get();
-        $daftarKelas  = DB::table('siswas')->select('kelas')->distinct()->whereNotNull('kelas')->orderBy('kelas')->get();
-        $totalHadir   = $dataAbsensi->where('status', 'Hadir')->count();
+        $totalHadir   = $dataAbsensi->whereIn('status', ['Hadir', 'Masuk', 'Terlambat'])->count();
         $totalIzin    = $dataAbsensi->whereIn('status', ['Izin', 'Sakit'])->count();
         $totalAlpa    = $dataAbsensi->where('status', 'Alpa')->count();
-        $namaBulan    = Carbon::createFromFormat('Y-m', $bulan)->locale('id')->isoFormat('MMMM YYYY');
-        $pdfData = compact('dataAbsensi', 'daftarKelas', 'bulan', 'kelas', 'totalHadir', 'totalIzin', 'totalAlpa', 'namaBulan');
+        
+        $periodeFormat = Carbon::parse($startDate)->locale('id')->isoFormat('DD MMMM YYYY') . ' s/d ' . Carbon::parse($endDate)->locale('id')->isoFormat('DD MMMM YYYY');
+        
+        $pdfData = compact('dataAbsensi', 'startDate', 'endDate', 'kelas', 'totalHadir', 'totalIzin', 'totalAlpa', 'periodeFormat');
+        
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('rekap_pdf', $pdfData);
         $pdf->setPaper('a4', 'landscape');
-        $namaFile = 'Rekap_Absensi_MTs_' . ($kelas ?: 'Semua') . '_' . $bulan . '.pdf';
+        
+        $namaFile = 'Rekap_Absensi_MTs_' . ($kelas ?: 'Semua') . '_' . $startDate . '_sd_' . $endDate . '.pdf';
         return $pdf->download($namaFile);
     }
 

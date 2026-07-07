@@ -35,11 +35,8 @@ class AttendanceController extends Controller
      */
     public function kirimPresensi(Request $request, Database $database)
     {
-        // Validasi Token Rahasia Alat
+        // Validasi Token Rahasia Alat (Sudah ditangani secara global oleh Middleware ValidateDeviceToken)
         $token = $request->input('device_token');
-        if ($token !== 'OsL0YVgA6N0upcn5ASiRZ6DwyVgBA0Zo') {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized Device Token.'], 401);
-        }
 
         $fingerprintId = $request->input('fingerprint_id');
         if (!$fingerprintId) {
@@ -51,27 +48,75 @@ class AttendanceController extends Controller
             return response()->json(['status' => 'error', 'message' => 'ID Sidik Jari tidak terdaftar.'], 404);
         }
 
-        $sudahAbsen = DB::table('attendances')
-            ->where('siswa_id', $siswa->id)
-            ->whereDate('created_at', Carbon::today('Asia/Jakarta'))
-            ->where('status', 'Hadir')
-            ->exists();
+        $waktu = Carbon::now('Asia/Jakarta');
+        $jamSekarang = $waktu->format('H:i:s');
 
-        if ($sudahAbsen) {
-            return response()->json([
-                'status'  => 'already',
-                'message' => $siswa->name . ' sudah absen hari ini.',
-                'nama'    => $siswa->name
-            ], 200);
+        // AMBIL JADWAL
+        $schedule = \App\Models\AttendanceSchedule::first();
+        if (!$schedule) {
+            return response()->json(['status' => 'error', 'message' => 'Jadwal absen belum diatur admin.'], 400);
         }
 
-        $waktu = Carbon::now('Asia/Jakarta');
+        $statusAbsen = '';
+        $keteranganAbsen = '';
 
+        // CEK APAKAH DALAM JAM MASUK
+        if ($jamSekarang >= $schedule->start_masuk && $jamSekarang <= $schedule->end_masuk) {
+            $sudahMasuk = DB::table('attendances')
+                ->where('siswa_id', $siswa->id)
+                ->whereDate('created_at', Carbon::today('Asia/Jakarta'))
+                ->where('status', 'Masuk')
+                ->exists();
+
+            if ($sudahMasuk) {
+                return response()->json([
+                    'status'  => 'already',
+                    'message' => $siswa->name . ' sudah absen masuk hari ini.',
+                    'nama'    => $siswa->name
+                ], 200);
+            }
+
+            $statusAbsen = 'Masuk';
+            if ($jamSekarang > $schedule->batas_terlambat) {
+                $keteranganAbsen = 'Terlambat';
+            } else {
+                $keteranganAbsen = 'Hadir';
+            }
+        } 
+        // CEK APAKAH DALAM JAM PULANG
+        else if ($jamSekarang >= $schedule->start_pulang && $jamSekarang <= $schedule->end_pulang) {
+            $sudahPulang = DB::table('attendances')
+                ->where('siswa_id', $siswa->id)
+                ->whereDate('created_at', Carbon::today('Asia/Jakarta'))
+                ->where('status', 'Pulang')
+                ->exists();
+
+            if ($sudahPulang) {
+                return response()->json([
+                    'status'  => 'already',
+                    'message' => $siswa->name . ' sudah absen pulang hari ini.',
+                    'nama'    => $siswa->name
+                ], 200);
+            }
+
+            $statusAbsen = 'Pulang';
+            $keteranganAbsen = 'Pulang';
+        } 
+        // DI LUAR JAM ABSEN
+        else {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Belum waktunya absen masuk atau pulang.',
+                'nama'    => $siswa->name
+            ], 400);
+        }
+
+        // INSERT KE DATABASE
         DB::table('attendances')->insert([
             'siswa_id'   => $siswa->id,
-            'status'     => 'Hadir',
-            'keterangan' => 'Fingerprint IoT',
-            'time_in'    => $waktu,
+            'status'     => $statusAbsen,
+            'keterangan' => $keteranganAbsen,
+            'waktu_scan' => $waktu,
             'created_at' => $waktu,
             'updated_at' => $waktu,
         ]);

@@ -83,7 +83,7 @@ class ValidateDeviceToken
         }
 
         // 3. ─── Sisipkan info device ke request ───────────────────────────
-        $request->merge(['_device' => $device]);
+        $request->attributes->add(['_device' => $device]);
 
         return $next($request);
     }
