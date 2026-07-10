@@ -29,6 +29,7 @@
             <a href="{{ url('/data-guru') }}">👨‍🏫 Kelola Data Guru</a>
             <a href="{{ url('/data-kelas') }}">ðŸ « Kelola Data Kelas</a>
             <a href="{{ url('/data-alat') }}">ðŸ– ï¸  Kelola Alat/Perangkat</a> <!-- MENU BARU -->
+            <a href="{{ route('attendance.schedule') }}">🕒 Pengaturan Jadwal</a>
             <a href="{{ url('/siswa') }}">ðŸ“Š Monitoring Presensi</a>
             <hr class="bg-secondary">
             <a href="{{ url('/logout') }}" class="text-danger fw-bold" onclick="return confirm('Apakah Anda yakin ingin keluar?')">ðŸšª Keluar / Logout</a>

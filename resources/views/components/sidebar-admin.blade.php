@@ -25,6 +25,9 @@
         </a>
 
         <div class="menu-section-title">Konfigurasi</div>
+        <a class="nav-link-custom {{ Request::is('pengaturan-jadwal*') ? 'active' : '' }}" href="{{ route('attendance.schedule') }}">
+            <i class="fa-solid fa-clock"></i> Pengaturan Jadwal
+        </a>
         <a class="nav-link-custom {{ Request::is('devices*') || Request::is('data-alat*') ? 'active' : '' }}" href="{{ route('devices.index') }}">
             <i class="fa-solid fa-fingerprint"></i> Manajemen Alat
         </a>

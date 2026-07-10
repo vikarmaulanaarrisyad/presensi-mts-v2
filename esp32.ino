@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Adafruit_Fingerprint.h>
@@ -35,6 +36,9 @@ const int    daylightOffset_sec = 0;
 // ================= KONFIGURASI HARDWARE =================
 #define BUZZER_PIN 4
 HardwareSerial mySerial(2); // RX = 16, TX = 17 di ESP32
+
+WiFiClient globalWifiClient;
+WiFiClientSecure globalWifiClientSecure;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2); 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
@@ -391,8 +395,15 @@ void kirimPresensi(int id, String timeStr) {
   // 1. KIRIM KE LARAVEL TERLEBIH DAHULU
   HTTPClient http;
   String targetUrl = baseUrl + "/presensi";
-  http.setTimeout(3000); 
-  http.begin(targetUrl);
+  http.setTimeout(10000); // 10 detik
+  
+  if (targetUrl.startsWith("https")) {
+    globalWifiClientSecure.setInsecure();
+    http.begin(globalWifiClientSecure, targetUrl);
+  } else {
+    http.begin(globalWifiClient, targetUrl);
+  }
+  
   http.addHeader("Content-Type", "application/json");
   http.addHeader("ngrok-skip-browser-warning", "69420"); // Bypass ngrok warning
 
@@ -426,10 +437,18 @@ void kirimPresensi(int id, String timeStr) {
     StaticJsonDocument<512> resDoc; 
     deserializeJson(resDoc, response);
     String nama = resDoc["nama"].as<String>();
+    String resStatus = resDoc["status"].as<String>();
     nama.toUpperCase(); 
-    cetakLCD(0, "HALO, " + nama); 
-    cetakLCD(1, "ABSEN BERHASIL! ");
-    bunyiBuzzer(1, 300); 
+    
+    if (resStatus == "already") {
+      cetakLCD(0, "  SUDAH ABSEN!  "); 
+      cetakLCD(1, nama);
+      bunyiBuzzer(2, 150); 
+    } else {
+      cetakLCD(0, "HALO, " + nama); 
+      cetakLCD(1, "ABSEN BERHASIL! ");
+      bunyiBuzzer(1, 300); 
+    }
     
   } else if (httpResponseCode == 400) {
     StaticJsonDocument<512> resDoc;
@@ -539,7 +558,14 @@ void cekStatusServer() {
   HTTPClient http;
   String targetUrl = baseUrl + "/cek-status-alat?device_token=" + deviceToken;
   http.setTimeout(3000); 
-  http.begin(targetUrl);
+  
+  if (targetUrl.startsWith("https")) {
+    globalWifiClientSecure.setInsecure();
+    http.begin(globalWifiClientSecure, targetUrl);
+  } else {
+    http.begin(globalWifiClient, targetUrl);
+  }
+  
   http.addHeader("ngrok-skip-browser-warning", "69420"); // Bypass ngrok warning
   int httpResponseCode = http.GET();
   
@@ -690,7 +716,14 @@ void konfirmasiEnrollServer(int id, String polaHex, String status) {
   HTTPClient http; 
   String targetUrl = baseUrl + "/konfirmasi-enroll"; 
   http.setTimeout(5000); 
-  http.begin(targetUrl); 
+  
+  if (targetUrl.startsWith("https")) {
+    globalWifiClientSecure.setInsecure();
+    http.begin(globalWifiClientSecure, targetUrl);
+  } else {
+    http.begin(globalWifiClient, targetUrl);
+  }
+  
   http.addHeader("Content-Type", "application/json");
   http.addHeader("ngrok-skip-browser-warning", "69420"); // Bypass ngrok warning
   
@@ -732,7 +765,14 @@ void konfirmasiHapusServer(int id, int commandId) {
   HTTPClient http; 
   String targetUrl = baseUrl + "/konfirmasi-hapus";
   http.setTimeout(4000); 
-  http.begin(targetUrl); 
+  
+  if (targetUrl.startsWith("https")) {
+    globalWifiClientSecure.setInsecure();
+    http.begin(globalWifiClientSecure, targetUrl);
+  } else {
+    http.begin(globalWifiClient, targetUrl);
+  }
+  
   http.addHeader("Content-Type", "application/json");
   http.addHeader("ngrok-skip-browser-warning", "69420"); // Bypass ngrok warning
   
@@ -856,7 +896,14 @@ void prosesHapusSemuaJari(FirebaseJsonArray& ids) {
     HTTPClient httpWipe;
     String wipeUrl = baseUrl + "/konfirmasi-reset-semua";
     httpWipe.setTimeout(5000);
-    httpWipe.begin(wipeUrl);
+  
+    if (wipeUrl.startsWith("https")) {
+      globalWifiClientSecure.setInsecure();
+      httpWipe.begin(globalWifiClientSecure, wipeUrl);
+    } else {
+      httpWipe.begin(globalWifiClient, wipeUrl);
+    }
+  
     httpWipe.addHeader("Content-Type", "application/json");
     httpWipe.addHeader("ngrok-skip-browser-warning", "69420");
     StaticJsonDocument<256> wDoc;
@@ -925,7 +972,14 @@ void prosesHapusSemuaJari(FirebaseJsonArray& ids) {
   HTTPClient http;
   String targetUrl = baseUrl + "/konfirmasi-reset-semua";
   http.setTimeout(5000);
-  http.begin(targetUrl);
+    
+  if (targetUrl.startsWith("https")) {
+    globalWifiClientSecure.setInsecure();
+    http.begin(globalWifiClientSecure, targetUrl);
+  } else {
+    http.begin(globalWifiClient, targetUrl);
+  }
+    
   http.addHeader("Content-Type", "application/json");
   http.addHeader("ngrok-skip-browser-warning", "69420");
 

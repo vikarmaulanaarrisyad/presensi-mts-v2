@@ -643,13 +643,13 @@
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyA...", 
-            authDomain: "presensimts-80d6a.firebaseapp.com",
+            apiKey: "{{ env('FIREBASE_API_KEY') }}", 
+            authDomain: "{{ env('FIREBASE_AUTH_DOMAIN', 'presensimts-80d6a.firebaseapp.com') }}",
             databaseURL: "{{ env('FIREBASE_DATABASE_URL') }}", 
-            projectId: "presensimts-80d6a",
-            storageBucket: "presensimts-80d6a.appspot.com",
-            messagingSenderId: "1234567890", 
-            appId: "1:123456:web:abcdef"      
+            projectId: "{{ env('FIREBASE_PROJECT_ID', 'presensimts-80d6a') }}",
+            storageBucket: "{{ env('FIREBASE_STORAGE_BUCKET', 'presensimts-80d6a.appspot.com') }}",
+            messagingSenderId: "{{ env('FIREBASE_MESSAGING_SENDER_ID') }}", 
+            appId: "{{ env('FIREBASE_APP_ID') }}"      
         };
 
         const app = initializeApp(firebaseConfig);
