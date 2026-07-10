@@ -42,6 +42,7 @@ Route::middleware(['premium'])->group(function () {
     // ROUTE DATA SISWA (CRUD)
     // =====================================================
     Route::get('/data-siswa', [SiswaController::class, 'dataSiswa'])->name('data.siswa');
+    Route::get('/api/data-siswa/datatable', [SiswaController::class, 'dataSiswaDatatable'])->name('api.data.siswa');
     Route::post('/siswa/store', [SiswaController::class, 'store'])->name('siswa.store');
     Route::post('/siswa/update/{id}', [SiswaController::class, 'update'])->name('siswa.update');
 

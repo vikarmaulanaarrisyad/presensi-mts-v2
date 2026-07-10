@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Kreait\Firebase\Contract\Database;
 use App\Models\Siswa;  // <-- TAMBAH INI
 use App\Models\Device; // <-- TAMBAH INI
+use Yajra\DataTables\Facades\DataTables;
 
 class SiswaController extends Controller
 {
@@ -384,6 +385,49 @@ class SiswaController extends Controller
         $payments = DB::table('payment_settings')->get();
 
         return view('data-siswa', compact('siswas', 'role', 'devices', 'activeEnrolls', 'kelases', 'premiumFeatures', 'payments'));
+    }
+
+    /**
+     * DataTables endpoint untuk Data Siswa
+     */
+    public function dataSiswaDatatable(Request $request)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $role = session('user_role');
+        
+        $query = DB::table('siswas');
+        if ($role === 'murid' || $role === 'siswa') {
+            $query->where('name', session('user_name'));
+        }
+
+        $activeEnrolls = DB::table('devices')->where('status', 'enroll')->pluck('id', 'target_siswa_id')->toArray();
+        $premiumFeatures = DB::table('premium_features')->get()->keyBy('menu_code');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('name', function ($siswa) {
+                return $siswa->name ?? 'Nama Tidak Ada';
+            })
+            ->editColumn('nis', function ($siswa) {
+                return $siswa->nis ?? '-';
+            })
+            ->editColumn('kelas', function ($siswa) {
+                return '<span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1.5 fw-semibold">' . ($siswa->kelas ?? 'VII - A') . '</span>';
+            })
+            ->editColumn('fingerprint_id', function ($siswa) {
+                if ($siswa->fingerprint_id) {
+                    return '<span class="text-success font-mono-custom fw-bold"><i class="fa-solid fa-fingerprint me-1"></i> ID-' . $siswa->fingerprint_id . '</span>';
+                } else {
+                    return '<span class="badge bg-danger bg-opacity-10 text-danger border px-2 py-1 fw-semibold" style="font-size: 0.75rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i> Belum</span>';
+                }
+            })
+            ->addColumn('aksi', function ($siswa) use ($premiumFeatures, $activeEnrolls) {
+                return view('partials.siswa_aksi', compact('siswa', 'premiumFeatures', 'activeEnrolls'))->render();
+            })
+            ->rawColumns(['kelas', 'fingerprint_id', 'aksi'])
+            ->make(true);
     }
 
     // ... fungsi dataKelas, storeKelas, simpanIzin, rekapPdf, tesFirebase TETAP SAMA ...
