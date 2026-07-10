@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -410,22 +410,22 @@
                     @forelse($logAbsensiKu as $log)
                     <tr>
                         <td>
-                            <div style="font-weight: 700; color: var(--dark); font-size: 0.95rem;">{{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d F Y') }}</div>
-                            <div style="color: var(--text-muted); font-size: 0.8rem;"><i class="fa-regular fa-clock me-1"></i>{{ \Carbon\Carbon::parse($log->created_at)->format('H:i') }} WIB</div>
+                            <div style="font-weight: 700; color: var(--dark); font-size: 0.95rem;">{{ \Carbon\Carbon::parse($log->updated_at ?? $log->tanggal)->translatedFormat('d F Y') }}</div>
+                            <div style="color: var(--text-muted); font-size: 0.8rem;"><i class="fa-regular fa-clock me-1"></i>{{ \Carbon\Carbon::parse($log->updated_at ?? $log->waktu_masuk)->format('H:i') }} WIB</div>
                         </td>
                         <td>
-                            @if($log->status === 'Hadir')
-                                <span class="bdg bdg-success"><i class="fa-solid fa-check"></i> Hadir</span>
-                            @elseif($log->status === 'Izin' || $log->status === 'Sakit')
-                                <span class="bdg bdg-warning"><i class="fa-solid fa-envelope"></i> {{ $log->status }}</span>
+                            @if($log->status_masuk === 'Hadir' || $log->status_masuk === 'Masuk' || $log->status_masuk === 'Terlambat')
+                                <span class="bdg bdg-success"><i class="fa-solid fa-check"></i> {{ $log->status_masuk }}</span>
+                            @elseif($log->status_masuk === 'Izin' || $log->status_masuk === 'Sakit')
+                                <span class="bdg bdg-warning"><i class="fa-solid fa-envelope"></i> {{ $log->status_masuk }}</span>
                             @else
                                 <span class="bdg bdg-danger"><i class="fa-solid fa-xmark"></i> Alpa</span>
                             @endif
                         </td>
                         <td>
-                            @if($log->keterangan)
+                            @if($log->keterangan_masuk)
                                 <span style="background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; color: var(--text-main); display: inline-block;">
-                                    <i class="fa-solid fa-quote-left text-muted me-1" style="font-size: 0.7rem;"></i> {{ $log->keterangan }}
+                                    <i class="fa-solid fa-quote-left text-muted me-1" style="font-size: 0.7rem;"></i> {{ $log->keterangan_masuk }}
                                 </span>
                             @else
                                 <span class="text-muted" style="font-size: 0.85rem;">-</span>
