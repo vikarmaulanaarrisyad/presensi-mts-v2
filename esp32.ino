@@ -438,15 +438,17 @@ void kirimPresensi(int id, String timeStr) {
     deserializeJson(resDoc, response);
     String nama = resDoc["nama"].as<String>();
     String resStatus = resDoc["status"].as<String>();
+    String jenisAbsen = resDoc["jenis_absen"].as<String>();
     nama.toUpperCase(); 
+    jenisAbsen.toUpperCase();
     
     if (resStatus == "already") {
-      cetakLCD(0, "  SUDAH ABSEN!  "); 
+      cetakLCD(0, "SUDAH " + jenisAbsen + "!"); 
       cetakLCD(1, nama);
       bunyiBuzzer(2, 150); 
     } else {
       cetakLCD(0, "HALO, " + nama); 
-      cetakLCD(1, "ABSEN BERHASIL! ");
+      cetakLCD(1, "ABSEN " + jenisAbsen);
       bunyiBuzzer(1, 300); 
     }
     

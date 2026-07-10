@@ -90,7 +90,8 @@ class AttendanceController extends Controller
                 return response()->json([
                     'status'  => 'already',
                     'message' => $siswa->name . ' sudah absen masuk hari ini.',
-                    'nama'    => $siswa->name
+                    'nama'    => $siswa->name,
+                    'jenis_absen' => 'Masuk'
                 ], 200);
             }
 
@@ -140,7 +141,8 @@ class AttendanceController extends Controller
                 return response()->json([
                     'status'  => 'already',
                     'message' => $siswa->name . ' sudah absen pulang hari ini.',
-                    'nama'    => $siswa->name
+                    'nama'    => $siswa->name,
+                    'jenis_absen' => 'Pulang'
                 ], 200);
             }
 
@@ -186,7 +188,7 @@ class AttendanceController extends Controller
 
         // Firebase Push Real-time
         try {
-            $database->getReference('scan_fingerprint')->set([
+            app('firebase.database')->getReference('scan_fingerprint')->set([
                 'siswa_id' => $siswa->id,
                 'nis' => $siswa->nis ?? '-',
                 'nama_siswa' => $siswa->name,
@@ -197,7 +199,7 @@ class AttendanceController extends Controller
                 'timestamp' => $waktu->timestamp
             ]);
         } catch (\Exception $e) {
-            // Abaikan jika Firebase gagal, absensi MySQL tetap aman
+            \Log::error('[Firebase Absensi Push Error] ' . $e->getMessage());
         }
 
         return response()->json([
@@ -205,6 +207,7 @@ class AttendanceController extends Controller
             'message' => 'Presensi berhasil disimpan ke cloud!',
             'nama'    => $siswa->name,
             'waktu'   => $waktu->format('H:i:s'),
+            'jenis_absen' => $statusAbsen
         ], 200);
     }
 
@@ -281,14 +284,16 @@ class AttendanceController extends Controller
                     'pola_sidik_jari' => $polaSidikJari, // Simpan pola HEX
                     'updated_at' => Carbon::now('Asia/Jakarta')
                 ]);
+        }
                 
-            try {
-                app('firebase.database')->getReference('enroll_responses/' . $device->device_token)->set([
-                    'status' => 'success',
-                    'siswa_id' => $device->target_siswa_id,
-                    'timestamp' => Carbon::now('Asia/Jakarta')->timestamp
-                ]);
-            } catch (\Exception $e) {}
+        try {
+            app('firebase.database')->getReference('enroll_responses/' . $device->device_token)->set([
+                'status' => $status,
+                'siswa_id' => $device->target_siswa_id,
+                'timestamp' => Carbon::now('Asia/Jakarta')->timestamp
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[Firebase Enroll Push Error] ' . $e->getMessage());
         }
 
         // Kembalikan status mesin ke mode standby normal dan bersihkan target

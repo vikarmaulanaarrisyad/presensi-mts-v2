@@ -952,32 +952,38 @@
         const database = getDatabase(app);
 
         window.listenFirebaseEnroll = function(deviceToken, siswaId, modalId) {
+            console.log("Memulai listenFirebaseEnroll untuk device:", deviceToken, "siswa:", siswaId);
             const dbRef = ref(database, 'enroll_responses/' + deviceToken);
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
-                if (data && data.status === 'success' && parseInt(data.siswa_id) === parseInt(siswaId)) {
+                console.log("Firebase Data Diterima (Enroll):", data);
+                if (data && (data.status === 'success' || data.status === 'failed')) {
+                    console.log("Kondisi respons terpenuhi, mengupdate UI modal...");
                     off(dbRef); 
                     remove(dbRef); 
                     
-                    let modalEl = document.getElementById(modalId);
-                    if (modalEl) {
-                        let modalIns = bootstrap.Modal.getInstance(modalEl);
-                        if (modalIns) {
-                            modalIns.hide();
-                            // Hapus backdrop jika tertinggal
-                            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                            document.body.classList.remove('modal-open');
+                    let loadingContainer = document.getElementById('loading-container-' + siswaId);
+                    if (loadingContainer) {
+                        if (data.status === 'success') {
+                            loadingContainer.innerHTML = `
+                                <div class="text-center py-5">
+                                    <i class="fa-solid fa-circle-check fa-beat fa-4x text-success mb-4"></i>
+                                    <h5 class="fw-bold text-success">Berhasil!</h5>
+                                    <p class="text-muted small mb-4">Sidik jari siswa telah sukses direkam dan tersimpan.</p>
+                                    <button type="button" class="btn btn-success px-4 rounded-3 fw-bold" onclick="location.reload()">Tutup & Refresh</button>
+                                </div>
+                            `;
+                        } else {
+                            loadingContainer.innerHTML = `
+                                <div class="text-center py-5">
+                                    <i class="fa-solid fa-circle-xmark fa-shake fa-4x text-danger mb-4"></i>
+                                    <h5 class="fw-bold text-danger">Gagal Didaftarkan!</h5>
+                                    <p class="text-muted small mb-4">Jari tersebut mungkin sudah terdaftar untuk siswa lain atau sensor tidak merespons (timeout).</p>
+                                    <button type="button" class="btn btn-danger px-4 rounded-3 fw-bold" onclick="location.reload()">Tutup & Refresh</button>
+                                </div>
+                            `;
                         }
                     }
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Rekam Jari Berhasil!',
-                        text: 'Sidik jari siswa telah sukses direkam dan tersimpan.',
-                        confirmButtonColor: '#10b981'
-                    }).then(() => {
-                        $('#tabelSiswa').DataTable().ajax.reload(null, false);
-                    });
                 }
             });
         };
@@ -986,13 +992,13 @@
             const dbRef = ref(database, 'delete_responses/' + deviceToken);
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
-                if (data && data.status === 'success' && parseInt(data.siswa_id) === parseInt(siswaId)) {
+                if (data && data.status === 'success') {
                     off(dbRef); 
                     remove(dbRef); 
                     
                     let modalEl = document.getElementById(modalId);
                     if (modalEl) {
-                        let modalIns = bootstrap.Modal.getInstance(modalEl);
+                        let modalIns = bootstrap.Modal.getOrCreateInstance(modalEl);
                         if (modalIns) {
                             modalIns.hide();
                             document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());

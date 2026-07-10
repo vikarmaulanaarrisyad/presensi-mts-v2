@@ -63,19 +63,19 @@
                 <td><strong>{{ $row->nama_siswa ?? '-' }}</strong></td>
                 <td class="text-center">{{ $row->kelas ?? '-' }}</td>
                 <td class="text-center">
-                    @if($row->status == 'Izin')
+                    @if($row->status_masuk == 'Izin')
                         <span class="badge-izin">Izin</span>
-                    @elseif($row->status == 'Sakit')
+                    @elseif($row->status_masuk == 'Sakit')
                         <span class="badge-izin">Sakit</span>
-                    @elseif($row->status == 'Hadir')
+                    @elseif($row->status_masuk == 'Hadir')
                         <span class="badge-hadir">Hadir</span>
                     @else
                         <span class="badge-absen">Alpa</span>
                     @endif
                 </td>
-                <td>{{ $row->keterangan ?? '-' }}</td>
+                <td>{{ $row->keterangan_masuk ?? '-' }}</td>
                 <td class="text-center">
-                    {{ $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d-m-Y H:i') . ' WIB' : '-' }}
+                    {{ $row->updated_at ? \Carbon\Carbon::parse($row->updated_at)->format('d-m-Y H:i') . ' WIB' : '-' }}
                 </td>
             </tr>
             @empty

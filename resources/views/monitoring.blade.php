@@ -643,49 +643,48 @@
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "{{ env('FIREBASE_API_KEY') }}", 
-            authDomain: "{{ env('FIREBASE_AUTH_DOMAIN', 'presensimts-80d6a.firebaseapp.com') }}",
-            databaseURL: "{{ env('FIREBASE_DATABASE_URL') }}", 
-            projectId: "{{ env('FIREBASE_PROJECT_ID', 'presensimts-80d6a') }}",
-            storageBucket: "{{ env('FIREBASE_STORAGE_BUCKET', 'presensimts-80d6a.appspot.com') }}",
-            messagingSenderId: "{{ env('FIREBASE_MESSAGING_SENDER_ID') }}", 
-            appId: "{{ env('FIREBASE_APP_ID') }}"      
+            apiKey: "AIzaSyAV5PRX9jm9hE27fh_f-TvG9T4sQYkBh58",
+            authDomain: "presensimts-80d6a.firebaseapp.com",
+            databaseURL: "https://presensimts-80d6a-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "presensimts-80d6a",
+            storageBucket: "presensimts-80d6a.firebasestorage.app",
+            messagingSenderId: "851090001947",
+            appId: "1:851090001947:web:b2333713559faa9b5ce8be",
+            measurementId: "G-8SBTZ0GEMQ"
         };
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const dbRef = ref(database, 'scan_fingerprint');
 
-        let initialLoad = true;
+        let lastTimestamp = 0;
 
         onValue(dbRef, (snapshot) => {
             const data = snapshot.val();
-            if (data) {
+            if (data && data.timestamp) {
                 console.log("Data Presensi Baru Masuk dari Firebase:", data);
 
-                // Cegah penambahan baris saat halaman pertama kali dibuka
-                if (initialLoad) {
-                    initialLoad = false;
-                    return;
-                }
-
-                // Reload datatable ketika ada scan fingerprint baru
-                if (window.tableLogAbsensi) {
+                // Reload datatable jika ini adalah data yang benar-benar baru
+                if (window.tableLogAbsensi && data.timestamp > lastTimestamp) {
+                    lastTimestamp = data.timestamp;
                     window.tableLogAbsensi.ajax.reload(null, false);
-                }
-
-                // Update counter statistik dengan halus
-                if (data.status && data.status === 'Masuk') {
-                    const statBox = document.querySelector('.icon-hadir')?.parentElement;
-                    if (statBox) {
-                        const valEl = statBox.querySelector('.stat-value');
-                        if (valEl) valEl.innerText = parseInt(valEl.innerText) + 1;
-                        
-                        // Efek flash hijau sebentar
-                        statBox.style.transition = 'background-color 0.3s ease';
-                        statBox.style.backgroundColor = '#d1fae5';
-                        setTimeout(() => statBox.style.backgroundColor = 'white', 600);
+                    
+                    // Update counter statistik dengan halus
+                    if (data.status && data.status === 'Masuk') {
+                        const statBox = document.querySelector('.icon-hadir')?.parentElement;
+                        if (statBox) {
+                            const valEl = statBox.querySelector('.stat-value');
+                            if (valEl) valEl.innerText = parseInt(valEl.innerText) + 1;
+                            
+                            // Efek flash hijau sebentar
+                            statBox.style.transition = 'background-color 0.3s ease';
+                            statBox.style.backgroundColor = '#d1fae5';
+                            setTimeout(() => statBox.style.backgroundColor = 'white', 600);
+                        }
                     }
+                } else if (lastTimestamp === 0) {
+                    // Set timestamp awal saat halaman load agar tidak memicu animasi saat refresh
+                    lastTimestamp = data.timestamp;
                 }
             }
         });
