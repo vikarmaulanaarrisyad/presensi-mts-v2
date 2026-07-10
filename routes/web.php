@@ -52,6 +52,7 @@ Route::middleware(['premium'])->group(function () {
     Route::post('/siswa/rekam-jari', [SiswaController::class, 'rekamJari'])->name('siswa.rekam_jari');
     Route::post('/siswa/hapus-jari-alat', [SiswaController::class, 'hapusJariAlat'])->name('siswa.hapus_jari_alat');
     Route::post('/siswa/{id}/reset-jari', [SiswaController::class, 'resetJariLokal'])->name('siswa.reset_jari');
+    Route::post('/siswa/{id}/sync-jari', [SiswaController::class, 'syncFingerprint'])->name('siswa.sync_jari');
 
     // PENGATURAN JADWAL ABSEN
     Route::get('/pengaturan-jadwal', [\App\Http\Controllers\AttendanceScheduleController::class, 'index'])->name('attendance.schedule');

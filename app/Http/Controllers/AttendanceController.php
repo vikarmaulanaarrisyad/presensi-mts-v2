@@ -66,12 +66,24 @@ class AttendanceController extends Controller
         $statusAbsen = '';
         $keteranganAbsen = '';
 
+        // FUNGSI BANTUAN UNTUK CEK RENTANG WAKTU (Mendukung beda hari/overnight)
+        $isTimeBetween = function($time, $start, $end) {
+            if ($start <= $end) {
+                return $time >= $start && $time <= $end;
+            } else {
+                // Lewat tengah malam (contoh: start 19:00, end 02:00)
+                return $time >= $start || $time <= $end;
+            }
+        };
+
+        $tanggalHariIni = Carbon::today('Asia/Jakarta')->toDateString();
+
         // CEK APAKAH DALAM JAM MASUK
-        if ($jamSekarang >= $schedule->start_masuk && $jamSekarang <= $schedule->end_masuk) {
+        if ($isTimeBetween($jamSekarang, $schedule->start_masuk, $schedule->end_masuk)) {
             $sudahMasuk = DB::table('attendances')
                 ->where('siswa_id', $siswa->id)
-                ->whereDate('created_at', Carbon::today('Asia/Jakarta'))
-                ->where('status', 'Masuk')
+                ->where('tanggal', $tanggalHariIni)
+                ->whereNotNull('waktu_masuk')
                 ->exists();
 
             if ($sudahMasuk) {
@@ -83,18 +95,45 @@ class AttendanceController extends Controller
             }
 
             $statusAbsen = 'Masuk';
-            if ($jamSekarang > $schedule->batas_terlambat) {
+            
+            // Cek keterlambatan (mendukung overnight)
+            $isTerlambat = false;
+            if ($schedule->start_masuk <= $schedule->batas_terlambat) {
+                $isTerlambat = $jamSekarang > $schedule->batas_terlambat && $jamSekarang <= $schedule->end_masuk;
+            } else {
+                // Batas terlambat lewat tengah malam
+                if ($jamSekarang > $schedule->batas_terlambat && $jamSekarang <= $schedule->end_masuk) {
+                    $isTerlambat = true;
+                } elseif ($jamSekarang > $schedule->batas_terlambat && $jamSekarang >= $schedule->start_masuk) {
+                    $isTerlambat = true;
+                }
+            }
+            
+            if ($isTerlambat || (!$isTimeBetween($jamSekarang, $schedule->start_masuk, $schedule->batas_terlambat) && $isTimeBetween($jamSekarang, $schedule->start_masuk, $schedule->end_masuk))) {
                 $keteranganAbsen = 'Terlambat';
             } else {
                 $keteranganAbsen = 'Hadir';
             }
+
+            // SIMPAN / UPDATE MASUK
+            DB::table('attendances')->updateOrInsert(
+                ['siswa_id' => $siswa->id, 'tanggal' => $tanggalHariIni],
+                [
+                    'waktu_masuk' => $waktu->format('H:i:s'),
+                    'status_masuk' => 'Hadir', // Status umum, keterangan yang bilang hadir/terlambat
+                    'keterangan_masuk' => $keteranganAbsen,
+                    'sumber' => 'IoT',
+                    'updated_at' => now('Asia/Jakarta')
+                ]
+            );
+
         } 
         // CEK APAKAH DALAM JAM PULANG
-        else if ($jamSekarang >= $schedule->start_pulang && $jamSekarang <= $schedule->end_pulang) {
+        else if ($isTimeBetween($jamSekarang, $schedule->start_pulang, $schedule->end_pulang)) {
             $sudahPulang = DB::table('attendances')
                 ->where('siswa_id', $siswa->id)
-                ->whereDate('created_at', Carbon::today('Asia/Jakarta'))
-                ->where('status', 'Pulang')
+                ->where('tanggal', $tanggalHariIni)
+                ->whereNotNull('waktu_pulang')
                 ->exists();
 
             if ($sudahPulang) {
@@ -107,6 +146,18 @@ class AttendanceController extends Controller
 
             $statusAbsen = 'Pulang';
             $keteranganAbsen = 'Pulang';
+
+            // SIMPAN / UPDATE PULANG
+            DB::table('attendances')->updateOrInsert(
+                ['siswa_id' => $siswa->id, 'tanggal' => $tanggalHariIni],
+                [
+                    'waktu_pulang' => $waktu->format('H:i:s'),
+                    'status_pulang' => 'Hadir',
+                    'keterangan_pulang' => 'Pulang',
+                    'sumber' => 'IoT',
+                    'updated_at' => now('Asia/Jakarta')
+                ]
+            );
         } 
         // DI LUAR JAM ABSEN
         else {
@@ -116,16 +167,6 @@ class AttendanceController extends Controller
                 'nama'    => $siswa->name
             ], 400);
         }
-
-        // INSERT KE DATABASE
-        DB::table('attendances')->insert([
-            'siswa_id'   => $siswa->id,
-            'status'     => $statusAbsen,
-            'keterangan' => $keteranganAbsen,
-            'waktu_scan' => $waktu,
-            'created_at' => $waktu,
-            'updated_at' => $waktu,
-        ]);
 
         // Fitur WhatsApp Notifikasi via Fonnte
         if (!empty($siswa->whatsapp)) {
@@ -150,9 +191,9 @@ class AttendanceController extends Controller
                 'nis' => $siswa->nis ?? '-',
                 'nama_siswa' => $siswa->name,
                 'kelas' => $siswa->kelas ?? '-',
-                'status' => 'Hadir',
-                'keterangan' => 'Fingerprint IoT',
-                'waktu' => $waktu->format('H:i:s'),
+                'status' => $statusAbsen,
+                'keterangan' => $keteranganAbsen,
+                'waktu' => $waktu->format('H:i'), // Cukup jam dan menit
                 'timestamp' => $waktu->timestamp
             ]);
         } catch (\Exception $e) {
@@ -237,8 +278,17 @@ class AttendanceController extends Controller
                 ->where('id', $device->target_siswa_id)
                 ->update([
                     'fingerprint_id' => $fingerprintId,
+                    'pola_sidik_jari' => $polaSidikJari, // Simpan pola HEX
                     'updated_at' => Carbon::now('Asia/Jakarta')
                 ]);
+                
+            try {
+                app('firebase.database')->getReference('enroll_responses/' . $device->device_token)->set([
+                    'status' => 'success',
+                    'siswa_id' => $device->target_siswa_id,
+                    'timestamp' => Carbon::now('Asia/Jakarta')->timestamp
+                ]);
+            } catch (\Exception $e) {}
         }
 
         // Kembalikan status mesin ke mode standby normal dan bersihkan target
@@ -269,12 +319,25 @@ class AttendanceController extends Controller
         }
 
         $fingerprintId = $request->input('fingerprint_id');
+        $status = $request->input('status');
 
         // Bersihkan id sidik jari siswa di database lokal berdasarkan target alat
-        if ($device->target_siswa_id) {
+        if ($status === 'success' && $device->target_siswa_id) {
             DB::table('siswas')
                 ->where('id', $device->target_siswa_id)
-                ->update(['fingerprint_id' => null]);
+                ->update([
+                    'fingerprint_id' => null,
+                    'pola_sidik_jari' => null,
+                    'updated_at' => Carbon::now('Asia/Jakarta')
+                ]);
+                
+            try {
+                app('firebase.database')->getReference('delete_responses/' . $device->device_token)->set([
+                    'status' => 'success',
+                    'siswa_id' => $device->target_siswa_id,
+                    'timestamp' => Carbon::now('Asia/Jakarta')->timestamp
+                ]);
+            } catch (\Exception $e) {}
         }
 
         // Kembalikan status mesin ke mode standby normal dan bersihkan target

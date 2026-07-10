@@ -414,17 +414,10 @@
         <x-header :title="$title ?? 'Dashboard'" :subtitle="$subtitle ?? ''">
             {{ $headerActions ?? '' }}
         </x-header>
-
-        @if(session('success'))
-            <div class="alert-premium">
-                <i class="fa-solid fa-circle-check" style="font-size: 18px; color: #10b981;"></i>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
-        {{ $slot }}
+{{ $slot }}
     </div>
 
     {{ $scripts ?? '' }}
+    @include('partials.sweetalerts')
 </body>
 </html>

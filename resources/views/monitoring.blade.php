@@ -477,15 +477,7 @@
                     </div>
                 </div>
             </div>
-
-            @if(session('success'))
-                <div class="alert-premium">
-                    <i class="fa-solid fa-circle-check" style="font-size: 18px; color: #10b981;"></i>
-                    <span>{{ session('success') }}</span>
-                </div>
-            @endif
-
-            <div class="stats-grid">
+<div class="stats-grid">
                 <div class="stat-card">
                     <div>
                         <div class="stat-value">{{ $totalSiswa ?? '0' }}</div>
@@ -521,49 +513,59 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 80px;">No</th>
+                                <th style="width: 60px;">No</th>
                                 <th>ID Siswa / NIS</th>
                                 <th>Nama Siswa</th>
                                 <th>Kelas</th>
-                                <th>Status Kehadiran</th>
-                                <th>Keterangan / Alasan</th>
-                                <th style="text-align: center; width: 180px;">Aksi Admin</th>
+                                <th style="width: 140px;">Jam Masuk</th>
+                                <th style="width: 140px;">Jam Pulang</th>
+                                <th style="text-align: center; width: 140px;">Aksi Admin</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($logAbsensi as $index => $log)
-                                @php
-                                    $statusClean = strtolower($log->status ?? '');
-
-                                    if($statusClean === 'hadir'){
-                                        $cssBadge = 'badge-premium-hadir';
-                                        $icon = 'fa-circle-check';
-                                    } elseif(in_array($statusClean, ['izin', 'sakit'])){
-                                        $cssBadge = 'badge-premium-izin';
-                                        $icon = 'fa-envelope';
-                                    } else {
-                                        $cssBadge = 'badge-premium-absen';
-                                        $icon = 'fa-circle-xmark';
-                                    }
-                                @endphp
-                                <tr>
+                                <tr id="row-siswa-{{ $log->siswa_id }}">
                                     <td>{{ $index + 1 }}</td>
                                     <td style="font-weight: 600;">{{ $log->nis ?? '-' }}</td>
                                     <td style="font-weight: 700;">{{ $log->nama_siswa }}</td>
                                     <td>{{ $log->kelas ?? '-' }}</td>
-                                    <td>
-                                        <span class="status-badge {{ $cssBadge }}">
-                                            <i class="fa-solid {{ $icon }}"></i> {{ $log->status }}
-                                        </span>
+                                    
+                                    {{-- Kolom Masuk --}}
+                                    <td id="masuk-{{ $log->siswa_id }}">
+                                        @if($log->waktu_masuk)
+                                            @php
+                                                $isTerlambat = (strtolower($log->keterangan_masuk) === 'terlambat');
+                                                $cssMasuk = $isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
+                                                $iconMasuk = $isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
+                                            @endphp
+                                            <span class="status-badge {{ $cssMasuk }}">
+                                                <i class="fa-solid {{ $iconMasuk }}"></i> {{ \Carbon\Carbon::parse($log->waktu_masuk)->format('H:i') }}
+                                            </span>
+                                            <div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">
+                                                {{ $log->keterangan_masuk }}
+                                            </div>
+                                        @else
+                                            <span style="color:#cbd5e1; font-weight:bold;">-</span>
+                                        @endif
                                     </td>
-                                    <td>{{ $log->keterangan ?? '-' }}</td>
+
+                                    {{-- Kolom Pulang --}}
+                                    <td id="pulang-{{ $log->siswa_id }}">
+                                        @if($log->waktu_pulang)
+                                            <span class="status-badge badge-premium-hadir" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
+                                                <i class="fa-solid fa-right-from-bracket"></i> {{ \Carbon\Carbon::parse($log->waktu_pulang)->format('H:i') }}
+                                            </span>
+                                        @else
+                                            <span style="color:#cbd5e1; font-weight:bold;">-</span>
+                                        @endif
+                                    </td>
+
                                     <td style="text-align: center;">
-                                        @if(!in_array($statusClean, ['hadir', 'izin', 'sakit', 'alpa']))
+                                        @if(!$log->waktu_masuk && !$log->waktu_pulang)
                                             <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
                                                 <button class="btn-action-izin" onclick="openModalIzin('{{ $log->siswa_id }}')">
                                                     <i class="fa-solid fa-user-pen"></i> Izin
                                                 </button>
-
                                                 <button class="btn-action-alpha" onclick="openModalAlpha('{{ $log->siswa_id }}')">
                                                     <i class="fa-solid fa-user-xmark"></i> Alpha
                                                 </button>
@@ -670,7 +672,8 @@
 
             // Real-time UI dipicu oleh Firebase (lihat script type="module" di bawah)
         </script>
-    </body>
+        @include('partials.sweetalerts')
+</body>
     </html>
 
     <script type="module">
@@ -698,36 +701,131 @@
             if (data) {
                 console.log("Data Presensi Baru Masuk dari Firebase:", data);
 
-                // Cegah reload ganda saat halaman pertama kali dibuka
+                // Cegah penambahan baris saat halaman pertama kali dibuka
                 if (initialLoad) {
                     initialLoad = false;
                     return;
                 }
 
-                // Fetch HTML terbaru untuk mengupdate tabel & statistik secara instan
-                fetch(window.location.href)
-                    .then(response => response.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
+                // 1. Hapus pesan "Tidak ada aktivitas" jika ada
+                const emptyRow = document.querySelector('tbody tr td[colspan="7"]');
+                if (emptyRow) {
+                    emptyRow.parentElement.remove();
+                }
 
-                        // Update tabel absensi
-                        const newTbody = doc.querySelector('tbody');
-                        const oldTbody = document.querySelector('tbody');
-                        if (newTbody && oldTbody) {
-                            oldTbody.innerHTML = newTbody.innerHTML;
+                const tbody = document.querySelector('tbody');
+                
+                // 2. Cek apakah siswa sudah ada di tabel
+                let existingRow = document.getElementById('row-siswa-' + data.siswa_id);
+                
+                if (existingRow) {
+                    // Update baris yang sudah ada
+                    if (data.status === 'Masuk') {
+                        let tdMasuk = document.getElementById('masuk-' + data.siswa_id);
+                        if (tdMasuk) {
+                            let isTerlambat = data.keterangan && data.keterangan.toLowerCase() === 'terlambat';
+                            let cssMasuk = isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
+                            let iconMasuk = isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
+                            
+                            tdMasuk.innerHTML = `
+                                <span class="status-badge ${cssMasuk}">
+                                    <i class="fa-solid ${iconMasuk}"></i> ${data.waktu}
+                                </span>
+                                <div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">${data.keterangan || 'Hadir'}</div>
+                            `;
+                            // Highlight update
+                            tdMasuk.style.transition = 'background-color 0.5s ease';
+                            tdMasuk.style.backgroundColor = '#d1fae5';
+                            setTimeout(() => tdMasuk.style.backgroundColor = 'transparent', 1000);
                         }
-
-                        // Update grid statistik
-                        const newStats = doc.querySelector('.stats-grid');
-                        const oldStats = document.querySelector('.stats-grid');
-                        if (newStats && oldStats) {
-                            oldStats.innerHTML = newStats.innerHTML;
+                    } else if (data.status === 'Pulang') {
+                        let tdPulang = document.getElementById('pulang-' + data.siswa_id);
+                        if (tdPulang) {
+                            tdPulang.innerHTML = `
+                                <span class="status-badge badge-premium-hadir" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
+                                    <i class="fa-solid fa-right-from-bracket"></i> ${data.waktu}
+                                </span>
+                            `;
+                            // Highlight update
+                            tdPulang.style.transition = 'background-color 0.5s ease';
+                            tdPulang.style.backgroundColor = '#bae6fd';
+                            setTimeout(() => tdPulang.style.backgroundColor = 'transparent', 1000);
                         }
+                    }
+                    
+                    // Hilangkan tombol aksi jika sudah absen masuk/pulang
+                    let tdAksi = existingRow.querySelector('td:last-child');
+                    if (tdAksi && tdAksi.innerHTML.includes('button')) {
+                        tdAksi.innerHTML = '<span style="color: #cbd5e1; font-weight: bold;">-</span>';
+                    }
+                } else {
+                    // Buat elemen baris baru
+                    const newRow = document.createElement('tr');
+                    newRow.id = 'row-siswa-' + data.siswa_id;
+                    
+                    let kontenMasuk = '<span style="color:#cbd5e1; font-weight:bold;">-</span>';
+                    let kontenPulang = '<span style="color:#cbd5e1; font-weight:bold;">-</span>';
+                    
+                    if (data.status === 'Masuk') {
+                        let isTerlambat = data.keterangan && data.keterangan.toLowerCase() === 'terlambat';
+                        let cssMasuk = isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
+                        let iconMasuk = isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
+                        kontenMasuk = `
+                            <span class="status-badge ${cssMasuk}">
+                                <i class="fa-solid ${iconMasuk}"></i> ${data.waktu}
+                            </span>
+                            <div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">${data.keterangan || 'Hadir'}</div>
+                        `;
+                    } else if (data.status === 'Pulang') {
+                        kontenPulang = `
+                            <span class="status-badge badge-premium-hadir" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
+                                <i class="fa-solid fa-right-from-bracket"></i> ${data.waktu}
+                            </span>
+                        `;
+                    }
+                    
+                    newRow.innerHTML = `
+                        <td>1</td>
+                        <td style="font-weight: 600;">${data.nis || '-'}</td>
+                        <td style="font-weight: 700;">${data.nama_siswa || '-'}</td>
+                        <td>${data.kelas || '-'}</td>
+                        <td id="masuk-${data.siswa_id}">${kontenMasuk}</td>
+                        <td id="pulang-${data.siswa_id}">${kontenPulang}</td>
+                        <td style="text-align: center;">
+                            <span style="color: #cbd5e1; font-weight: bold;">-</span>
+                        </td>
+                    `;
+                    
+                    // Tambahkan di paling atas tabel
+                    tbody.insertBefore(newRow, tbody.firstChild);
 
-                        console.log("UI berhasil diperbarui!");
-                    })
-                    .catch(err => console.error('Gagal memuat pembaruan real-time:', err));
+                    // Update nomor urut baris
+                    let rowNum = 1;
+                    tbody.querySelectorAll('tr').forEach(tr => {
+                        const firstTd = tr.querySelector('td:first-child');
+                        if (firstTd && !firstTd.hasAttribute('colspan')) {
+                            firstTd.innerText = rowNum++;
+                        }
+                    });
+                    
+                    newRow.style.transition = 'background-color 0.5s ease';
+                    newRow.style.backgroundColor = '#d1fae5';
+                    setTimeout(() => newRow.style.backgroundColor = 'transparent', 1000);
+                }
+
+                // 3. Update counter statistik dengan halus
+                if (data.status && data.status === 'Masuk' && !existingRow) {
+                    const statBox = document.querySelector('.icon-hadir')?.parentElement;
+                    if (statBox) {
+                        const valEl = statBox.querySelector('.stat-value');
+                        if (valEl) valEl.innerText = parseInt(valEl.innerText) + 1;
+                        
+                        // Efek flash hijau sebentar
+                        statBox.style.transition = 'background-color 0.3s ease';
+                        statBox.style.backgroundColor = '#d1fae5';
+                        setTimeout(() => statBox.style.backgroundColor = 'white', 600);
+                    }
+                }
             }
         });
     </script>

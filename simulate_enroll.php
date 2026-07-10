@@ -3,7 +3,7 @@
 // File: simulate_enroll.php
 
 // Konfigurasi Alat
-$baseUrl = 'http://localhost:8000/api'; 
+$baseUrl = 'http://localhost:8000/api/fingerprint'; 
 $deviceToken = 'mREzmHaKONQmBtks4ly6bimPM2XnGAtP'; // Token database
 
 // ID Sidik Jari Siswa yang direkam (Bisa diganti atau pakai random agar tidak duplikat)
@@ -18,21 +18,29 @@ echo "=================================================\n";
 $apiUrl = $baseUrl . '/konfirmasi-enroll';
 
 // 2. Data Payload (Parameter)
+// Buat string HEX palsu sepanjang 1024 karakter agar lolos validasi sync ESP32
+$dummyHex = str_repeat('0F', 512); // 512 byte = 1024 karakter hex
+
 $postData = [
     'device_token' => $deviceToken,
     'fingerprint_id' => $fingerprint_id,
     'status' => 'success',
-    'pola_sidik_jari' => 'HEX_TEMPLATE_DUMMY_DATA_HERE' // Opsional jika butuh nyimpan backup di cloud
+    'pola_sidik_jari' => $dummyHex 
 ];
 
 echo "\n[1] Menyiapkan Payload Data:\n";
 print_r($postData);
 
 // 3. Konfigurasi cURL
+$jsonData = json_encode($postData);
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $apiUrl);
 curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
+    'Content-Length: ' . strlen($jsonData)
+]);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
 // 4. Eksekusi Request

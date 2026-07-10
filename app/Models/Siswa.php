@@ -28,6 +28,7 @@ class Siswa extends Authenticatable
         'role',             // Kolom nomor 9 di HeidiSQL
         'fingerprint_id',   // Kolom nomor 10 di HeidiSQL
         'no_wa',            // Kolom nomor 11 di HeidiSQL (Untuk fitur WhatsApp Fonnte Orang Tua)
+        'pola_sidik_jari',  // Pola Hex Sidik Jari untuk sinkronisasi antar alat
     ];
 
     /**

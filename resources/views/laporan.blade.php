@@ -286,20 +286,7 @@
             <span class="panel-subtitle">Pilih rentang tanggal dan filter kelas untuk mencetak laporan format PDF tersinkronisasi.</span>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show border-0 rounded-3" style="background-color:#d1e7dd; color:#0f5132;" role="alert">
-                <i class="fa-solid fa-check-circle me-2"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show border-0 rounded-3" style="background-color:#f8d7da; color:#842029;" role="alert">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        <div class="row">
+<div class="row">
             <div class="col-lg-7">
                 <div class="table-container-card">
                     <h5 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-filter me-2 text-success"></i> Filter Laporan</h5>
@@ -365,5 +352,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @include('partials.sweetalerts')
 </body>
 </html>

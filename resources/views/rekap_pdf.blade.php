@@ -91,5 +91,6 @@
             window.print();
         }
     </script>
+    @include('partials.sweetalerts')
 </body>
 </html>

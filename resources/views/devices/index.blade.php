@@ -277,21 +277,7 @@
             </div>
         </div>
 
-        @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
-            <i class="fa-solid fa-circle-check me-2"></i> <strong>Sukses!</strong> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        @endif
-
-        @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
-            <i class="fa-solid fa-circle-xmark me-2"></i> <strong>Gagal!</strong> {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        @endif
-
-        @php 
+@php 
             $activeDemos = collect($premiumFeatures ?? [])->filter(function($f) {
                 return $f->demo_expires_at && \Carbon\Carbon::now()->lessThan(\Carbon\Carbon::parse($f->demo_expires_at));
             });
@@ -604,5 +590,6 @@ function showPaywall(name, price, has_demo, demo_requested, expires_at, menu_cod
 }
 </script>
 
+    @include('partials.sweetalerts')
 </body>
 </html>

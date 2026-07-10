@@ -39,15 +39,7 @@
                 <h2>Sistem Kontrol Utama Admin</h2>
                 <span class="badge bg-success p-2 fs-6">Mode: Administrator</span>
             </div>
-
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            <div class="card card-custom bg-white p-4 mb-4">
+<div class="card card-custom bg-white p-4 mb-4">
                 <h4 class="text-secondary">Selamat Datang Kembali, <span class="text-primary fw-bold">{{ session('user_name') }}</span>!</h4>
                 <p class="text-muted mb-0">Melalui halaman ini, Anda memiliki hak penuh untuk memantau, mengedit data siswa, data kelas, data alat, serta mengelola sinkronisasi database cloud pada sistem presensi fingerprint MTs Mambaul Ulum Kota Tegal.</p>
             </div>
@@ -116,6 +108,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @include('partials.sweetalerts')
 </body>
 </html>
 

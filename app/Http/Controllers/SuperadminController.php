@@ -304,7 +304,7 @@ class SuperadminController extends Controller
         $pendingTransaksi = DB::table('payment_transactions')->where('status', 'pending')->count();
         $approvedTransaksi = DB::table('payment_transactions')->where('status', 'approved')->count();
 
-        $attendanceToday = DB::table('attendances')->whereDate('created_at', today())->count();
+        $attendanceToday = DB::table('attendances')->where('tanggal', today()->toDateString())->count();
 
         // ── Log Files ────────────────────────────────────────────────────
         $logPath = storage_path('logs/laravel.log');
@@ -323,9 +323,9 @@ class SuperadminController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $day   = \Carbon\Carbon::today()->subDays($i);
             $rekap = DB::table('attendances')
-                ->select('status', DB::raw('count(*) as total'))
-                ->whereDate('created_at', $day)
-                ->groupBy('status')
+                ->select('status_masuk as status', DB::raw('count(*) as total'))
+                ->where('tanggal', $day->toDateString())
+                ->groupBy('status_masuk')
                 ->pluck('total', 'status');
 
             $chartLabels[] = $day->format('d M');
@@ -337,8 +337,8 @@ class SuperadminController extends Controller
         // ── Absensi Terbaru (10 terakhir) ───────────────────────────────
         $recentAttendances = DB::table('attendances')
             ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
-            ->select('attendances.status', 'attendances.created_at', 'siswas.name', 'siswas.kelas')
-            ->orderBy('attendances.created_at', 'desc')
+            ->select('attendances.status_masuk as status', 'attendances.updated_at as created_at', 'siswas.name', 'siswas.kelas')
+            ->orderBy('attendances.updated_at', 'desc')
             ->limit(10)
             ->get();
 
@@ -388,7 +388,7 @@ class SuperadminController extends Controller
         $perKelas = DB::table('attendances')
             ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
             ->select('siswas.kelas', DB::raw('count(*) as total'))
-            ->whereDate('attendances.created_at', today())
+            ->where('attendances.tanggal', today()->toDateString())
             ->groupBy('siswas.kelas')
             ->orderBy('siswas.kelas')
             ->get();

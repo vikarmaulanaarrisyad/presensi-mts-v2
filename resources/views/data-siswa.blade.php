@@ -295,7 +295,7 @@
                                         <select name="device_id" class="form-select py-2.5" style="border-radius:8px;" required>
                                             <option value="">-- Pilih Alat --</option>
                                             @foreach($devices as $d)
-                                                <option value="{{ $d->id }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
+                                                <option value="{{ $d->id }}" data-token="{{ $d->device_token }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
                                             @endforeach
                                         </select>
                                         <small class="text-muted d-block mt-2">Pilih alat yang ada di depan Anda sekarang. Setelah menekan tombol rekam, alat akan masuk mode pendaftaran. Tempelkan jari siswa 2 kali ke sensor.</small>
@@ -326,7 +326,7 @@
                                         <select name="device_id" class="form-select py-2.5" style="border-radius:8px;" required>
                                             <option value="">-- Pilih Alat --</option>
                                             @foreach($devices as $d)
-                                                <option value="{{ $d->id }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
+                                                <option value="{{ $d->id }}" data-token="{{ $d->device_token }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
                                             @endforeach
                                         </select>
                                         <small class="text-danger d-block mt-2">Pilih alat tempat sidik jari siswa ini pernah didaftarkan. ID Sidik Jari akan dihapus secara permanen dari alat.</small>
@@ -366,6 +366,10 @@
                     const formData = new FormData(form);
                     const deviceId = formData.get('device_id');
                     const studentName = form.getAttribute('data-name');
+                    
+                    const selectEl = form.querySelector('select[name="device_id"]');
+                    const selectedOption = selectEl.options[selectEl.selectedIndex];
+                    const deviceToken = selectedOption.getAttribute('data-token');
 
                     // Sembunyikan form secara paksa
                     form.style.display = 'none';
@@ -412,12 +416,13 @@
                             <div class="text-center py-5">
                                 <i class="fa-solid fa-paper-plane fa-bounce fa-4x text-primary mb-4"></i>
                                 <h5 class="fw-bold">Perintah Terkirim!</h5>
-                                <p class="text-muted small mb-3">Silakan lihat layar alat ESP32 dan tempelkan jari.<br>Setelah selesai di alat, tutup jendela ini untuk merefresh data.</p>
-                                <button type="button" class="btn btn-primary px-4 rounded-3 fw-bold" onclick="location.reload()">
-                                    <i class="fa-solid fa-rotate-right me-1"></i> Refresh Tabel
-                                </button>
+                                <p class="text-muted small mb-3">Silakan lihat layar alat ESP32 dan tempelkan jari.<br>Setelah sukses di alat, data akan otomatis direfresh.</p>
                             </div>
                         `;
+                        
+                        if (window.listenFirebaseEnroll) {
+                            window.listenFirebaseEnroll(deviceToken, siswaId, 'modalRekam' + siswaId);
+                        }
                     }).catch(err => {
                         loadingContainer.innerHTML = `
                             <div class="text-center py-5">
@@ -439,6 +444,10 @@
                     const formData = new FormData(form);
                     const deviceId = formData.get('device_id');
                     const studentName = form.getAttribute('data-name');
+                    
+                    const selectEl = form.querySelector('select[name="device_id"]');
+                    const selectedOption = selectEl.options[selectEl.selectedIndex];
+                    const deviceToken = selectedOption.getAttribute('data-token');
 
                     // Sembunyikan form secara paksa
                     form.style.display = 'none';
@@ -455,10 +464,10 @@
                     loadingContainer.classList.remove('d-none');
                     loadingContainer.innerHTML = `
                         <div class="text-center py-5">
-                            <i class="fa-solid fa-eraser fa-beat-fade fa-4x text-danger mb-4"></i>
-                            <h5 class="fw-bold">Menunggu Penghapusan Jari...</h5>
+                            <i class="fa-solid fa-spinner fa-spin-pulse fa-4x text-danger mb-4"></i>
+                            <h5 class="fw-bold">Sedang Menghapus Jari...</h5>
                             <p class="text-danger fw-bold fs-5 mb-2">${studentName}</p>
-                            <p class="text-muted small mb-4">Perintah penghapusan telah dikirim ke alat ESP32.<br>Jangan tutup jendela ini sampai proses selesai.</p>
+                            <p class="text-muted small mb-4">Mohon tunggu sementara alat memproses permintaan.<br>Jangan tutup jendela ini.</p>
                             <button type="button" class="btn btn-outline-secondary btn-sm px-4 rounded-3 fw-bold" onclick="batalkanRekam(${deviceId}, ${siswaId}, this)">
                                 <i class="fa-solid fa-circle-xmark me-1"></i> Batalkan
                             </button>
@@ -479,23 +488,22 @@
                         }
                         return response.json();
                     }).then(() => {
-                        // Polling dihapus sesuai permintaan.
-                        // Menampilkan pesan sukses terkirim ke alat.
                         loadingContainer.innerHTML = `
                             <div class="text-center py-5">
-                                <i class="fa-solid fa-paper-plane fa-bounce fa-4x text-primary mb-4"></i>
-                                <h5 class="fw-bold">Perintah Hapus Terkirim!</h5>
-                                <p class="text-muted small mb-3">Tunggu proses penghapusan di alat ESP32 selesai.<br>Tutup jendela ini untuk merefresh data.</p>
-                                <button type="button" class="btn btn-primary px-4 rounded-3 fw-bold" onclick="location.reload()">
-                                    <i class="fa-solid fa-rotate-right me-1"></i> Refresh Tabel
-                                </button>
+                                <i class="fa-solid fa-paper-plane fa-bounce fa-4x text-danger mb-4"></i>
+                                <h5 class="fw-bold">Perintah Terkirim!</h5>
+                                <p class="text-muted small mb-3">Sistem sedang memerintahkan alat untuk menghapus sidik jari.<br>Mohon tunggu sebentar.</p>
                             </div>
                         `;
+                        
+                        if (window.listenFirebaseDelete) {
+                            window.listenFirebaseDelete(deviceToken, siswaId, 'modalHapusJari' + siswaId);
+                        }
                     }).catch(err => {
                         loadingContainer.innerHTML = `
                             <div class="text-center py-5">
                                 <i class="fa-solid fa-triangle-exclamation fa-4x text-warning mb-4"></i>
-                                <h5 class="fw-bold">Tidak Bisa Diproses!</h5>
+                                <h5 class="fw-bold">Gagal Diproses!</h5>
                                 <p class="text-muted small mb-3">${err.message}</p>
                                 <button type="button" class="btn btn-secondary px-4 rounded-3" onclick="location.reload()">Tutup</button>
                             </div>
@@ -699,7 +707,32 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        window.location.href = url;
+                        $.ajax({
+                            url: url,
+                            type: 'GET',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            success: function(response) {
+                                if(response.status === 'success') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terkirim!',
+                                        text: response.message,
+                                        confirmButtonColor: '#10b981',
+                                        timer: 3000
+                                    });
+                                } else if (response.status === 'warning') {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Peringatan!',
+                                        text: response.message,
+                                        confirmButtonColor: '#f59e0b'
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Gagal!', xhr.responseJSON?.message || 'Terjadi kesalahan sistem.', 'error');
+                            }
+                        });
                     }
                 });
             });
@@ -718,7 +751,27 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        form.submit();
+                        $.ajax({
+                            url: form.action,
+                            type: form.method || 'POST',
+                            data: $(form).serialize(),
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            success: function(response) {
+                                if(response.status === 'success') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil!',
+                                        text: response.message,
+                                        confirmButtonColor: '#10b981',
+                                        timer: 3000
+                                    });
+                                    $('#tabelSiswa').DataTable().ajax.reload(null, false);
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Gagal!', xhr.responseJSON?.message || 'Terjadi kesalahan.', 'error');
+                            }
+                        });
                     }
                 });
             });
@@ -738,11 +791,147 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        form.submit();
+                        $.ajax({
+                            url: form.action,
+                            type: $(form).find('input[name="_method"]').val() || form.method || 'POST',
+                            data: $(form).serialize(),
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            success: function(response) {
+                                if(response.status === 'success') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil!',
+                                        text: response.message,
+                                        confirmButtonColor: '#10b981',
+                                        timer: 3000
+                                    });
+                                    $('#tabelSiswa').DataTable().ajax.reload(null, false);
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Gagal!', xhr.responseJSON?.message || 'Terjadi kesalahan.', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+            $('#tabelSiswa').on('submit', '.form-sync-jari', function(e) {
+                e.preventDefault();
+                let form = this;
+                let nama = $(this).data('name');
+                Swal.fire({
+                    title: 'Sinkronisasi Jari?',
+                    text: "Apakah Anda yakin ingin menyinkronkan (menyebarkan) pola sidik jari milik " + nama + " ke seluruh alat absensi?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0dcaf0',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Sinkronkan!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: form.action,
+                            type: form.method || 'POST',
+                            data: $(form).serialize(),
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            success: function(response) {
+                                if(response.status === 'success') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Tersinkronisasi!',
+                                        text: response.message,
+                                        confirmButtonColor: '#10b981',
+                                        timer: 3000
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Gagal!', xhr.responseJSON?.message || 'Terjadi kesalahan sinkronisasi.', 'error');
+                            }
+                        });
                     }
                 });
             });
         });
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, off, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA...", 
+            authDomain: "presensimts-80d6a.firebaseapp.com",
+            databaseURL: "{{ env('FIREBASE_DATABASE_URL', 'https://presensimts-80d6a-default-rtdb.asia-southeast1.firebasedatabase.app') }}", 
+            projectId: "presensimts-80d6a",
+            storageBucket: "presensimts-80d6a.appspot.com",
+            messagingSenderId: "1234567890", 
+            appId: "1:123456:web:abcdef"      
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        window.listenFirebaseEnroll = function(deviceToken, siswaId, modalId) {
+            const dbRef = ref(database, 'enroll_responses/' + deviceToken);
+            onValue(dbRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.status === 'success' && parseInt(data.siswa_id) === parseInt(siswaId)) {
+                    off(dbRef); 
+                    remove(dbRef); 
+                    
+                    let modalEl = document.getElementById(modalId);
+                    if (modalEl) {
+                        let modalIns = bootstrap.Modal.getInstance(modalEl);
+                        if (modalIns) {
+                            modalIns.hide();
+                            // Hapus backdrop jika tertinggal
+                            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                            document.body.classList.remove('modal-open');
+                        }
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Rekam Jari Berhasil!',
+                        text: 'Sidik jari siswa telah sukses direkam dan tersimpan.',
+                        confirmButtonColor: '#10b981'
+                    }).then(() => {
+                        $('#tabelSiswa').DataTable().ajax.reload(null, false);
+                    });
+                }
+            });
+        };
+
+        window.listenFirebaseDelete = function(deviceToken, siswaId, modalId) {
+            const dbRef = ref(database, 'delete_responses/' + deviceToken);
+            onValue(dbRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.status === 'success' && parseInt(data.siswa_id) === parseInt(siswaId)) {
+                    off(dbRef); 
+                    remove(dbRef); 
+                    
+                    let modalEl = document.getElementById(modalId);
+                    if (modalEl) {
+                        let modalIns = bootstrap.Modal.getInstance(modalEl);
+                        if (modalIns) {
+                            modalIns.hide();
+                            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                            document.body.classList.remove('modal-open');
+                        }
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Hapus Jari Berhasil!',
+                        text: 'Data sidik jari telah dihapus dari alat dan server.',
+                        confirmButtonColor: '#10b981'
+                    }).then(() => {
+                        $('#tabelSiswa').DataTable().ajax.reload(null, false);
+                    });
+                }
+            });
+        };
     </script>
     </x-slot>
+    @include('partials.sweetalerts')
 </x-layout-admin>

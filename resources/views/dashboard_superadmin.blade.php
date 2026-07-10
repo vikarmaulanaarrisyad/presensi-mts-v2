@@ -39,14 +39,7 @@
             <h2 class="fw-bold text-dark m-0">Pengaturan Fitur Prabayar</h2>
             <div class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold"><i class="fa-solid fa-bolt me-1"></i> Mode Superadmin</div>
         </div>
-
-        @if(session('success'))
-            <div class="alert alert-success border-0 shadow-sm rounded-3 fw-semibold">
-                <i class="fa-solid fa-check-circle me-2"></i> {{ session('success') }}
-            </div>
-        @endif
-
-        <div class="row">
+<div class="row">
             <div class="col-lg-8">
                 <div class="card card-premium">
                     <div class="card-header-premium d-flex align-items-center">
@@ -365,5 +358,6 @@
         // Jalankan pengecekan setiap 10 detik
         setInterval(checkPendingDemos, 10000);
     </script>
+    @include('partials.sweetalerts')
 </body>
 </html>

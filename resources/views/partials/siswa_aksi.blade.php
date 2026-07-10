@@ -47,6 +47,10 @@
                     @csrf
                     <button type="submit" class="btn btn-sm btn-outline-secondary px-2.5 py-1.5 rounded-3" title="Reset Jari (Lokal DB)"><i class="fa-solid fa-rotate-left"></i></button>
                 </form>
+                <form action="{{ route('siswa.sync_jari', $siswa->id) }}" method="POST" class="form-sync-jari" data-name="{{ $siswa->name }}" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-info px-2.5 py-1.5 rounded-3" title="Sync Jari ke Semua Alat"><i class="fa-solid fa-cloud-arrow-down"></i></button>
+                </form>
                 <button type="button" class="btn btn-sm btn-danger px-2.5 py-1.5 rounded-3" data-bs-toggle="modal" data-bs-target="#modalHapusJari{{ $siswa->id }}" title="Hapus Jari dari Alat"><i class="fa-solid fa-eraser"></i></button>
             @endif
         @endif

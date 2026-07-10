@@ -86,5 +86,6 @@
         </a>
     </div>
 
+    @include('partials.sweetalerts')
 </body>
 </html>

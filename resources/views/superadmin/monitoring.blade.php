@@ -462,5 +462,6 @@ new Chart(ctx,{
   }
 });
 </script>
+    @include('partials.sweetalerts')
 </body>
 </html>

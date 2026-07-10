@@ -303,20 +303,8 @@
     </div>
 
     <div class="table-container-card">
-        @if(session("success"))
-            <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 12px; font-weight: 500;">
-                <i class="fa-solid fa-circle-check me-2"></i> {{ session("success") }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        @if(session("error"))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 12px; font-weight: 500;">
-                <i class="fa-solid fa-circle-xmark me-2"></i> {{ session("error") }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
 
-        <form action="{{ url("/setting-akun/update") }}" method="POST">
+<form action="{{ url("/setting-akun/update") }}" method="POST">
             @csrf
             <div class="row">
                 <div class="col-md-6 mb-4">
@@ -343,6 +331,7 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @include('partials.sweetalerts')
 </body>
 </html>
 

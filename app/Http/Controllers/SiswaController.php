@@ -54,9 +54,9 @@ class SiswaController extends Controller
         }
 
         $rekapHariIni = DB::table('attendances')
-            ->select('status', DB::raw('count(*) as total'))
-            ->whereDate('created_at', $hariIni)
-            ->groupBy('status')
+            ->select('status_masuk as status', DB::raw('count(*) as total'))
+            ->where('tanggal', $hariIni->toDateString())
+            ->groupBy('status_masuk')
             ->pluck('total', 'status');
 
         $totalHadir = $rekapHariIni->get('Hadir', 0);
@@ -66,9 +66,15 @@ class SiswaController extends Controller
 
         $logAbsensi = DB::table('attendances')
             ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
-            ->select('attendances.id', 'siswas.id as siswa_id', 'attendances.status', 'attendances.keterangan', 'attendances.created_at', 'siswas.name as nama_siswa', 'siswas.nis', 'siswas.kelas')
-            ->whereDate('attendances.created_at', $hariIni)
-            ->orderBy('attendances.created_at', 'desc')
+            ->select(
+                'attendances.*',
+                'siswas.id as siswa_id', 
+                'siswas.name as nama_siswa', 
+                'siswas.nis', 
+                'siswas.kelas'
+            )
+            ->where('attendances.tanggal', $hariIni->toDateString())
+            ->orderBy('attendances.waktu_masuk', 'desc')
             ->get();
 
         $daftarKelas = DB::table('siswas')
@@ -92,10 +98,10 @@ class SiswaController extends Controller
 
         if (session('user_role') === 'murid') {
             $siswaData = DB::table('siswas')->where('id', session('user_id'))->first();
-            $totalHadirKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status', 'Hadir')->count();
-            $totalIzinKu = DB::table('attendances')->where('siswa_id', session('user_id'))->whereIn('status', ['Izin', 'Sakit'])->count();
-            $totalAlpaKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status', 'Alpa')->count();
-            $logAbsensiKu = DB::table('attendances')->where('siswa_id', session('user_id'))->orderBy('created_at', 'desc')->limit(20)->get();
+            $totalHadirKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status_masuk', 'Hadir')->count();
+            $totalIzinKu = DB::table('attendances')->where('siswa_id', session('user_id'))->whereIn('status_masuk', ['Izin', 'Sakit'])->count();
+            $totalAlpaKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status_masuk', 'Alpa')->count();
+            $logAbsensiKu = DB::table('attendances')->where('siswa_id', session('user_id'))->orderBy('tanggal', 'desc')->limit(20)->get();
             return view('dashboard_siswa', compact('siswaData', 'totalHadirKu', 'totalIzinKu', 'totalAlpaKu', 'logAbsensiKu'));
         }
 
@@ -143,9 +149,13 @@ class SiswaController extends Controller
                 'fingerprint_id' => null, // Dikosongkan dulu, direkam terpisah
             ]);
 
-            return redirect('/data-siswa')->with('success', "Siswa {$request->name} berhasil disimpan. Silakan klik tombol Rekam Jari untuk mendaftarkan sidik jari.");
+            $msg = "Siswa {$request->name} berhasil disimpan. Silakan klik tombol Rekam Jari untuk mendaftarkan sidik jari.";
+            if (request()->ajax()) return response()->json(['status' => 'success', 'message' => $msg]);
+            return redirect('/data-siswa')->with('success', $msg);
         } catch (\Exception $e) {
-            return redirect('/data-siswa')->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+            $msg = 'Gagal menyimpan data: ' . $e->getMessage();
+            if (request()->ajax()) return response()->json(['status' => 'error', 'message' => $msg], 500);
+            return redirect('/data-siswa')->with('error', $msg);
         }
     }
 
@@ -176,7 +186,9 @@ class SiswaController extends Controller
             'updated_at' => now(),
         ]);
 
-        return redirect('/data-siswa')->with('success', "Data siswa {$request->name} berhasil diperbarui!");
+        $msg = "Data siswa {$request->name} berhasil diperbarui!";
+        if (request()->ajax()) return response()->json(['status' => 'success', 'message' => $msg]);
+        return redirect('/data-siswa')->with('success', $msg);
     }
 
     /**
@@ -226,6 +238,57 @@ class SiswaController extends Controller
         }
 
         return redirect('/data-siswa')->with('success', "Perintah Rekam Jari (ID: {$nextFingerprintId}) untuk {$siswa->name} terkirim ke alat {$device->nama_alat}. Segera tempelkan jari!");
+    }
+
+    /**
+     * FUNGSI BARU: Sinkronisasi (Broadcast) Pola Sidik Jari ke Semua Alat ESP32
+     */
+    public function syncFingerprint(Request $request, $id)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return $redirect;
+
+        if (!in_array(session('user_role'), ['admin', 'kepsek'])) {
+            $msg = 'Hanya Admin dan Kepsek yang boleh mensinkronisasi data jari.';
+            if ($request->ajax()) return response()->json(['status' => 'error', 'message' => $msg], 403);
+            return back()->with('error', $msg);
+        }
+
+        $siswa = Siswa::findOrFail($id);
+        
+        if (!$siswa->fingerprint_id || !$siswa->pola_sidik_jari) {
+            $msg = "Siswa {$siswa->name} belum merekam jarinya atau data polanya kosong!";
+            if ($request->ajax()) return response()->json(['status' => 'error', 'message' => $msg], 422);
+            return back()->with('error', $msg);
+        }
+
+        // Cari semua alat yang aktif
+        $devices = Device::all();
+        if ($devices->count() == 0) {
+            $msg = 'Tidak ada alat absensi yang terdaftar.';
+            if ($request->ajax()) return response()->json(['status' => 'error', 'message' => $msg], 404);
+            return back()->with('error', $msg);
+        }
+
+        $count = 0;
+        foreach ($devices as $device) {
+            try {
+                // Broadcast ke masing-masing alat melalui Firebase
+                app('firebase.database')->getReference('commands/' . $device->device_token)->set([
+                    'mode' => 'sync',
+                    'fingerprint_id' => $siswa->fingerprint_id,
+                    'pola_sidik_jari' => $siswa->pola_sidik_jari,
+                    'timestamp' => now()->timestamp
+                ]);
+                $count++;
+            } catch (\Exception $e) {
+                // Abaikan error per alat
+            }
+        }
+
+        $msg = "Proses Sinkronisasi Jari untuk {$siswa->name} dikirim ke {$count} alat!";
+        if ($request->ajax()) return response()->json(['status' => 'success', 'message' => $msg]);
+        return back()->with('success', $msg);
     }
 
     /**
@@ -281,6 +344,10 @@ class SiswaController extends Controller
     {
         $siswa = Siswa::findOrFail($id);
         $siswa->update(['fingerprint_id' => null]);
+        
+        if (request()->ajax()) {
+            return response()->json(['status' => 'success', 'message' => "Data sidik jari {$siswa->name} berhasil di-reset dari database lokal."]);
+        }
         return redirect('/data-siswa')->with('success', "Data sidik jari {$siswa->name} berhasil di-reset dari database lokal.");
     }
 
@@ -293,11 +360,13 @@ class SiswaController extends Controller
         if ($redirect) return $redirect;
 
         if (session('user_role') !== 'admin') {
+            if (request()->ajax()) return response()->json(['status' => 'error', 'message' => 'Akses ditolak! Hanya Admin yang bisa menghapus data siswa.'], 403);
             return redirect('/data-siswa')->with('error', 'Akses ditolak! Hanya Admin yang bisa menghapus data siswa.');
         }
 
         $siswa = DB::table('siswas')->where('id', $id)->first();
         if (!$siswa) {
+            if (request()->ajax()) return response()->json(['status' => 'error', 'message' => 'Data siswa tidak ditemukan!'], 404);
             return redirect('/data-siswa')->with('error', 'Data siswa tidak ditemukan!');
         }
 
@@ -326,7 +395,12 @@ class SiswaController extends Controller
         }
 
         DB::table('siswas')->where('id', $id)->delete();
-        return redirect('/data-siswa')->with('success', 'Data siswa ' . $siswa->name . ' berhasil dihapus dari database cloud dan perintah hapus jari telah dikirim ke ESP32!');
+        
+        $msg = 'Data siswa ' . $siswa->name . ' berhasil dihapus dari database cloud dan perintah hapus jari telah dikirim ke ESP32!';
+        if (request()->ajax()) {
+            return response()->json(['status' => 'success', 'message' => $msg]);
+        }
+        return redirect('/data-siswa')->with('success', $msg);
     }
 
     /**
@@ -343,7 +417,9 @@ class SiswaController extends Controller
         $nomorWa = $siswa->no_wa ?? $siswa->whatsapp;
 
         if (!$nomorWa || $nomorWa == '081234567890') {
-            return redirect('/data-siswa')->with('warning', 'Notifikasi WhatsApp dibatalkan karena nomor siswa ' . $siswa->name . ' masih kosong atau bernilai default.');
+            $msg = 'Notifikasi WhatsApp dibatalkan karena nomor siswa ' . $siswa->name . ' masih kosong atau bernilai default.';
+            if (request()->ajax()) return response()->json(['status' => 'warning', 'message' => $msg]);
+            return redirect('/data-siswa')->with('warning', $msg);
         }
 
         $apiKey = env('FONNTE_API_KEY', '8LX8ds8EW1jz8QHQzaid');
@@ -360,7 +436,9 @@ class SiswaController extends Controller
             Log::error('Gagal mengirim WhatsApp Fonnte: ' . $e->getMessage());
         }
 
-        return redirect('/data-siswa')->with('success', 'Notifikasi WhatsApp berhasil dikirim ke orang tua ' . $siswa->name);
+        $msg = 'Notifikasi WhatsApp berhasil dikirim ke orang tua ' . $siswa->name;
+        if (request()->ajax()) return response()->json(['status' => 'success', 'message' => $msg]);
+        return redirect('/data-siswa')->with('success', $msg);
     }
 
     /**
@@ -563,17 +641,18 @@ class SiswaController extends Controller
             'keterangan' => 'required|string|max:255',
             'status'     => 'required|in:Izin,Sakit,Alpa',
         ]);
-        $sudahAda = DB::table('attendances')->where('siswa_id', $request->siswa_id)->whereDate('created_at', Carbon::today('Asia/Jakarta'))->exists();
-        if ($sudahAda) {
-            DB::table('attendances')->where('siswa_id', $request->siswa_id)->whereDate('created_at', Carbon::today('Asia/Jakarta'))->update([
-                'status'     => $request->status, 'keterangan' => $request->keterangan, 'sumber' => 'Manual', 'updated_at' => Carbon::now('Asia/Jakarta'),
-            ]);
-        } else {
-            DB::table('attendances')->insert([
-                'siswa_id'   => $request->siswa_id, 'status' => $request->status, 'keterangan' => $request->keterangan, 'sumber' => 'Manual', 
-                'created_at' => Carbon::now('Asia/Jakarta'), 'updated_at' => Carbon::now('Asia/Jakarta'),
-            ]);
-        }
+        $tanggalHariIni = Carbon::today('Asia/Jakarta')->toDateString();
+        
+        DB::table('attendances')->updateOrInsert(
+            ['siswa_id' => $request->siswa_id, 'tanggal' => $tanggalHariIni],
+            [
+                'status_masuk' => $request->status,
+                'keterangan_masuk' => $request->keterangan,
+                'sumber' => 'Manual',
+                'updated_at' => Carbon::now('Asia/Jakarta')
+            ]
+        );
+        
         $siswa = DB::table('siswas')->where('id', $request->siswa_id)->first();
         return redirect()->back()->with('success', 'Data ' . $request->status . ' untuk ' . ($siswa->name ?? '') . ' berhasil disimpan!');
     }
@@ -598,17 +677,17 @@ class SiswaController extends Controller
         
         $query = DB::table('attendances')->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
             ->select('attendances.*', 'siswas.name as nama_siswa', 'siswas.nis', 'siswas.kelas')
-            ->whereDate('attendances.created_at', '>=', $startDate)
-            ->whereDate('attendances.created_at', '<=', $endDate);
+            ->whereDate('attendances.tanggal', '>=', $startDate)
+            ->whereDate('attendances.tanggal', '<=', $endDate);
             
         if ($kelas) { 
             $query->where('siswas.kelas', $kelas); 
         }
         
         $dataAbsensi  = $query->orderBy('siswas.kelas')->orderBy('siswas.name')->get();
-        $totalHadir   = $dataAbsensi->whereIn('status', ['Hadir', 'Masuk', 'Terlambat'])->count();
-        $totalIzin    = $dataAbsensi->whereIn('status', ['Izin', 'Sakit'])->count();
-        $totalAlpa    = $dataAbsensi->where('status', 'Alpa')->count();
+        $totalHadir   = $dataAbsensi->whereIn('status_masuk', ['Hadir', 'Masuk', 'Terlambat'])->count();
+        $totalIzin    = $dataAbsensi->whereIn('status_masuk', ['Izin', 'Sakit'])->count();
+        $totalAlpa    = $dataAbsensi->where('status_masuk', 'Alpa')->count();
         
         $periodeFormat = Carbon::parse($startDate)->locale('id')->isoFormat('DD MMMM YYYY') . ' s/d ' . Carbon::parse($endDate)->locale('id')->isoFormat('DD MMMM YYYY');
         
@@ -646,9 +725,9 @@ class SiswaController extends Controller
         ]);
 
         $siswaId = session('user_id');
-        $hariIni = Carbon::today('Asia/Jakarta');
+        $hariIni = Carbon::today('Asia/Jakarta')->toDateString();
 
-        $sudahAda = DB::table('attendances')->where('siswa_id', $siswaId)->whereDate('created_at', $hariIni)->exists();
+        $sudahAda = DB::table('attendances')->where('siswa_id', $siswaId)->where('tanggal', $hariIni)->exists();
 
         if ($sudahAda) {
             return redirect()->back()->with('error', 'Anda sudah memiliki catatan presensi atau pengajuan izin untuk hari ini!');
@@ -656,10 +735,10 @@ class SiswaController extends Controller
 
         DB::table('attendances')->insert([
             'siswa_id'   => $siswaId,
-            'status'     => $request->status,
-            'keterangan' => $request->keterangan,
-            'sumber'     => 'Pengajuan Mandiri (Siswa)',
-            'waktu_scan' => Carbon::now('Asia/Jakarta'),
+            'tanggal'    => $hariIni,
+            'status_masuk'     => $request->status,
+            'keterangan_masuk' => $request->keterangan,
+            'sumber' => 'Manual',
             'created_at' => Carbon::now('Asia/Jakarta'),
             'updated_at' => Carbon::now('Asia/Jakarta'),
         ]);

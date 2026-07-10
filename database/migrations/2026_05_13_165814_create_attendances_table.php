@@ -15,9 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('siswa_id')->constrained('siswas')->onDelete('cascade');
             $table->foreignId('subject_id')->nullable()->constrained('subjects')->onDelete('cascade');
-            $table->dateTime('waktu_scan');
-            $table->enum('status', ['Masuk', 'Pulang', 'Mapel']); // Jenis absen
-            $table->string('keterangan'); // Contoh: Hadir, Terlambat, Bolos
+            $table->date('tanggal');
+            $table->time('waktu_masuk')->nullable();
+            $table->time('waktu_pulang')->nullable();
+            $table->string('status_masuk')->nullable(); // Hadir, Terlambat, Izin, Sakit, Alpa
+            $table->string('keterangan_masuk')->nullable();
+            $table->string('status_pulang')->nullable(); 
+            $table->string('keterangan_pulang')->nullable();
+            $table->string('sumber')->default('IoT'); // IoT atau Manual
             $table->timestamps();
         });
     }

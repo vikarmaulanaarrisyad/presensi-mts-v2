@@ -24,7 +24,7 @@ class DashboardController extends Controller
         // Menggunakan 'with' agar relasi absensi hari ini ditarik sekaligus secara instan (Anti N+1 Problem)
         $siswas = siswa::where('role', 'murid')
             ->with(['attendances' => function($query) {
-                $query->whereDate('waktu_scan', today());
+                $query->where('tanggal', today()->toDateString());
             }])
             ->get(); 
 

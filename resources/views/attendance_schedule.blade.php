@@ -244,14 +244,7 @@
                 </div>
             </div>
         </div>
-
-        @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
-            <i class="fa-solid fa-circle-check me-2"></i> <strong>Sukses!</strong> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        @endif
-        @if ($errors->any())
+@if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
             <i class="fa-solid fa-triangle-exclamation me-2"></i> Terdapat kesalahan pada isian form:
             <ul class="mb-0 mt-2">
@@ -333,5 +326,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @include('partials.sweetalerts')
 </body>
 </html>

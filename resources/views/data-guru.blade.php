@@ -11,9 +11,13 @@
                     @endif
     </x-slot>
 
+    <x-slot name="styles">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    </x-slot>
+
     <div class="table-container-card">
                 <div class="table-responsive">
-                    <table class="table custom-table table-hover align-middle mb-0">
+                    <table class="table custom-table table-hover align-middle mb-0" id="tabelGuru" style="width: 100%">
                         <thead style="background-color: #f8fafc;">
                             <tr>
                                 <th class="text-secondary fw-bold text-uppercase" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">No</th>
@@ -158,5 +162,20 @@
 
     <x-slot name="scripts">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#tabelGuru').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
+                },
+                "pageLength": 10,
+                "ordering": true
+            });
+        });
+    </script>
     </x-slot>
+    @include('partials.sweetalerts')
 </x-layout-admin>

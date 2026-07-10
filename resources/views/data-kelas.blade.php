@@ -11,72 +11,78 @@
                     @endif
     </x-slot>
 
-    @php
-                    $persen = $kls->persentase_hadir ?? 0;
-                    if ($persen >= 90) {
-                        $badgeClass = 'bg-success bg-opacity-10 text-success';
-                        $progressClass = 'bg-success';
-                    } elseif ($persen >= 75) {
-                        $badgeClass = 'bg-warning bg-opacity-10 text-warning';
-                        $progressClass = 'bg-warning';
-                    } else {
-                        $badgeClass = 'bg-danger bg-opacity-10 text-danger';
-                        $progressClass = 'bg-danger';
-                    }
-                @endphp
-                <div class="col-md-4">
-                    <div class="class-box-card">
-                        <div class="p-4">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div>
-                                    <h4 class="fw-bold text-dark mb-0" style="font-size: 1.25rem;">
-                                        Kelas {{ $kls->nama_kelas }}
-                                    </h4>
-                                    <span class="text-muted font-mono-custom text-uppercase" style="font-size:0.75rem;">
-                                        ID: {{ $kls->id_ruang }}
-                                    </span>
-                                </div>
-                                <span class="badge {{ $badgeClass }} rounded-pill px-2 py-1 font-mono-custom fw-bold" style="font-size:0.75rem;">
-                                    {{ $persen }}% Hadir
-                                </span>
-                            </div>
-                            <hr class="text-muted my-3 opacity-25">
-                            <div class="small mb-3">
-                                <div class="d-flex justify-content-between text-muted mb-1">
-                                    <span>Kapasitas Terisi:</span>
-                                    <span class="fw-bold text-dark">{{ $kls->jumlah_siswa }} / {{ $kls->kapasitas }} Siswa</span>
-                                </div>
-                                <div class="d-flex justify-content-between text-muted mb-1">
-                                    <span>Wali Kelas:</span>
-                                    <span class="fw-bold text-dark">{{ $kls->wali_kelas }}</span>
-                                </div>
-                            </div>
+    <x-slot name="styles">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    </x-slot>
 
+    <div class="container-fluid p-0">
+        <div class="table-container-card">
+            <h5 class="fw-bold text-dark mb-4">Daftar Kelas</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tabelKelas" style="width: 100%">
+                    <thead class="table-light text-secondary" style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">
+                        <tr>
+                            <th scope="col" class="px-3 py-3" style="width: 50px;">No</th>
+                            <th scope="col" class="py-3">Nama Kelas</th>
+                            <th scope="col" class="py-3">ID Ruang</th>
+                            <th scope="col" class="py-3">Wali Kelas</th>
+                            <th scope="col" class="py-3 text-center">Kapasitas (Siswa)</th>
+                            <th scope="col" class="py-3 text-center">Tingkat Kehadiran</th>
                             @if(session('user_role') === 'kepsek' || session('user_role') === 'admin')
-                            <div class="d-flex gap-2 mt-3 pt-3 border-top">
-                                <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1 fw-bold" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#modalEditKelas{{ $kls->id }}">
-                                    <i class="fa-solid fa-pen-to-square"></i> Edit
-                                </button>
-                                <form action="{{ route('kelas.delete', $kls->id) }}" method="POST" class="flex-grow-1" onsubmit="return confirm('Peringatan: Menghapus kelas akan berdampak pada data siswa yang terhubung. Lanjutkan?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100 fw-bold" style="font-size: 0.8rem;">
-                                        <i class="fa-solid fa-trash"></i> Hapus
-                                    </button>
-                                </form>
-                            </div>
+                            <th scope="col" class="py-3 text-center" style="width: 100px;">Aksi</th>
                             @endif
-                        </div>
-                    </div>
-                </div>
-                @empty
-                <div class="col-12">
-                    <div class="text-center text-muted py-5">
-                        <i class="fa-solid fa-school fa-2x mb-2"></i>
-                        <p>Belum ada data kelas yang terdaftar.</p>
-                    </div>
-                </div>
-                @endforelse
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 0.9rem; color: #475569;">
+                        @forelse($kelases as $index => $kls)
+                            @php
+                                $persen = $kls->persentase_hadir ?? 0;
+                                if ($persen >= 90) {
+                                    $badgeClass = 'badge-premium-hadir';
+                                    $icon = 'fa-circle-check';
+                                } elseif ($persen >= 75) {
+                                    $badgeClass = 'badge-premium-izin';
+                                    $icon = 'fa-envelope';
+                                } else {
+                                    $badgeClass = 'badge-premium-absen';
+                                    $icon = 'fa-circle-xmark';
+                                }
+                            @endphp
+                            <tr>
+                                <td class="px-3 fw-bold">{{ $index + 1 }}</td>
+                                <td class="fw-bold text-dark">{{ $kls->nama_kelas }}</td>
+                                <td class="font-mono-custom">{{ $kls->id_ruang }}</td>
+                                <td>{{ $kls->wali_kelas }}</td>
+                                <td class="text-center fw-bold">{{ $kls->jumlah_siswa }} / {{ $kls->kapasitas }}</td>
+                                <td class="text-center">
+                                    <span class="status-badge {{ $badgeClass }}">
+                                        <i class="fa-solid {{ $icon }}"></i> {{ $persen }}%
+                                    </span>
+                                </td>
+                                @if(session('user_role') === 'kepsek' || session('user_role') === 'admin')
+                                <td class="text-center">
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditKelas{{ $kls->id }}" title="Edit">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+                                        <form action="{{ route('kelas.delete', $kls->id) }}" method="POST" onsubmit="return confirm('Peringatan: Menghapus kelas akan berdampak pada data siswa yang terhubung. Lanjutkan?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                                @endif
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">Belum ada data kelas yang terdaftar.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -162,16 +168,23 @@
 
     <x-slot name="scripts">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#tabelKelas').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
+                },
+                "pageLength": 10,
+                "ordering": true
+            });
+        });
+    </script>
 
         <!-- Display Validation Errors or Success Messages -->
-        @if(session('success'))
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                alert("{{ session('success') }}");
-            });
-        </script>
-        @endif
-        @if($errors->any())
+@if($errors->any())
         <script>
             document.addEventListener("DOMContentLoaded", function() {
                 alert("{{ $errors->first() }}");
@@ -179,4 +192,5 @@
         </script>
         @endif
     </x-slot>
+    @include('partials.sweetalerts')
 </x-layout-admin>

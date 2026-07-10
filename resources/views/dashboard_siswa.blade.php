@@ -319,20 +319,7 @@
 </nav>
 
 <div class="container">
-    
-    
-    @if(session("success"))
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert" style="border-radius: 16px; border: none; background: rgba(16, 185, 129, 0.1); color: #059669; font-weight: 600;">
-            <i class="fa-solid fa-circle-check me-2"></i> {{ session("success") }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if(session("error"))
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius: 16px; border: none; background: rgba(239, 68, 68, 0.1); color: #dc2626; font-weight: 600;">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session("error") }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+
 <!-- Profile Banner -->
     <div class="profile-banner">
         <div class="avatar-glow">
@@ -508,6 +495,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @include('partials.sweetalerts')
 </body>
 </html>
 
