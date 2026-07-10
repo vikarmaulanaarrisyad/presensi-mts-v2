@@ -267,6 +267,9 @@ class SiswaController extends Controller
             ]);
         } catch (\Exception $e) {}
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => "Perintah Hapus Jari untuk {$siswa->name} terkirim ke alat {$device->nama_alat}."]);
+        }
         return redirect('/data-siswa')->with('success', "Perintah Hapus Jari untuk {$siswa->name} terkirim ke alat {$device->nama_alat}.");
     }
 
@@ -449,7 +452,62 @@ class SiswaController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        return redirect('/data-kelas')->with('success', 'Kelas ' . $request->nama_kelas . ' berhasil didaftarkan!');
+        return redirect()->back()->with('success', 'Kelas berhasil ditambahkan!');
+    }
+
+    public function updateKelas(Request $request, $id)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return $redirect;
+        if (session('user_role') !== 'kepsek' && session('user_role') !== 'admin') {
+            return redirect()->back()->with('error', 'Akses ditolak!');
+        }
+
+        $request->validate([
+            'nama_kelas' => 'required|string|max:20|unique:kelas,nama_kelas,' . $id,
+            'id_ruang'   => 'required|string|max:20',
+            'wali_kelas' => 'required|string|max:100',
+            'kapasitas'  => 'required|integer|min:1|max:50',
+        ]);
+
+        $kelasLama = DB::table('kelas')->where('id', $id)->first();
+        if (!$kelasLama) return redirect()->back()->with('error', 'Kelas tidak ditemukan!');
+
+        DB::table('kelas')->where('id', $id)->update([
+            'nama_kelas' => $request->nama_kelas,
+            'id_ruang'   => $request->id_ruang,
+            'wali_kelas' => $request->wali_kelas,
+            'kapasitas'  => $request->kapasitas,
+            'updated_at' => now(),
+        ]);
+
+        // Update nama kelas di tabel siswas jika nama kelas berubah
+        if ($kelasLama->nama_kelas !== $request->nama_kelas) {
+            DB::table('siswas')->where('kelas', $kelasLama->nama_kelas)->update([
+                'kelas' => $request->nama_kelas
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Data kelas berhasil diperbarui!');
+    }
+
+    public function deleteKelas($id)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return $redirect;
+        if (session('user_role') !== 'kepsek' && session('user_role') !== 'admin') {
+            return redirect()->back()->with('error', 'Akses ditolak!');
+        }
+
+        $kelas = DB::table('kelas')->where('id', $id)->first();
+        if (!$kelas) return redirect()->back()->with('error', 'Kelas tidak ditemukan!');
+
+        // Hapus kelas (Bisa tambahkan logika apakah ingin mengosongkan nama kelas pada siswa jika diperlukan)
+        // DB::table('siswas')->where('kelas', $kelas->nama_kelas)->update(['kelas' => null]);
+        
+        DB::table('kelas')->where('id', $id)->delete();
+
+        return redirect()->back()->with('success', 'Kelas berhasil dihapus!');
     }
 
     public function simpanIzin(Request $request)

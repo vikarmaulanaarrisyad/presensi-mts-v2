@@ -6,7 +6,7 @@ $deviceToken = 'mREzmHaKONQmBtks4ly6bimPM2XnGAtP'; // Token database
 $firebaseUrl = 'https://presensimts-80d6a-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 // ID Sidik Jari Siswa yang ingin dites (Pastikan ID ini ada di tabel siswas!)
-$fingerprint_id = 4; 
+$fingerprint_id = 2; 
 
 // Waktu absen bisa diedit secara manual di sini untuk mengetes skenario jam masuk / di luar jam.
 // Contoh: '2026-07-07 07:00:00' (Jam Masuk valid)

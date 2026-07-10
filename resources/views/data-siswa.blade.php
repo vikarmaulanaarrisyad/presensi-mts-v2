@@ -496,147 +496,7 @@
                                 </td>
                             </tr>
 
-                            <!-- MODAL FORM POP-UP INPUT IZIN (DATA ASLI) -->
-                            <div class="modal fade" id="modalIzin{{ $siswa->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content modal-style-content">
-                                        <div class="modal-header modal-style-header bg-warning text-dark">
-                                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-envelope me-2"></i>Input Absen Manual - {{ $siswa->name }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body p-4">
-                                            <form action="{{ url('/simpan-izin') }}" method="POST">
-                                                @csrf
-                                                <input type="hidden" name="siswa_id" value="{{ $siswa->id }}">
-                                                
-                                                <div class="mb-3 text-start">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Pilih Status</label>
-                                                    <select name="status" class="form-select py-2.5" style="border-radius:8px;" required>
-                                                        <option value="Izin">Izin</option>
-                                                        <option value="Sakit">Sakit</option>
-                                                    </select>
-                                                </div>
 
-                                                <div class="mb-4 text-start">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Alasan / Keterangan</label>
-                                                    <textarea name="keterangan" class="form-control" rows="3" placeholder="Contoh: Surat dokter demam, Acara keluarga, dll." style="border-radius:8px;" required></textarea>
-                                                </div>
-
-                                                <button type="submit" class="btn btn-warning w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
-                                                    <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Ke Cloud
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- MODAL EDIT SISWA -->
-                            <div class="modal fade" id="modalEditSiswa{{ $siswa->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content modal-style-content">
-                                        <div class="modal-header modal-style-header bg-primary text-white">
-                                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-user-pen me-2"></i>Edit Data Siswa</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body p-4 text-start">
-                                            <form action="{{ route('siswa.update', $siswa->id) }}" method="POST">
-                                                @csrf
-                                                
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Nama Lengkap</label>
-                                                    <input type="text" name="name" class="form-control py-2.5" value="{{ $siswa->name }}" style="border-radius:8px;" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">NISN</label>
-                                                    <input type="text" name="nisn" class="form-control py-2.5 font-mono-custom" value="{{ $siswa->nis }}" style="border-radius:8px;" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Pindah Kelas</label>
-                                                    <select name="kelas" class="form-select py-2.5" style="border-radius:8px;" required>
-                                                        @if(isset($kelases) && count($kelases) > 0)
-                                                            @foreach($kelases as $kls)
-                                                                <option value="{{ $kls->nama_kelas }}" {{ $siswa->kelas == $kls->nama_kelas ? 'selected' : '' }}>Kelas {{ $kls->nama_kelas }} (Ruang {{ $kls->id_ruang }})</option>
-                                                            @endforeach
-                                                        @else
-                                                            <option value="{{ $siswa->kelas }}">{{ $siswa->kelas }} (Data kelas belum ditambahkan)</option>
-                                                        @endif
-                                                    </select>
-                                                </div>
-                                                <div class="mb-4">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">No. WA Orang Tua</label>
-                                                    <input type="text" name="no_wa" class="form-control py-2.5 font-mono-custom" value="{{ $siswa->no_wa }}" style="border-radius:8px;" required>
-                                                </div>
-                                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
-                                                    <i class="fa-solid fa-save"></i> Simpan Perubahan
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- MODAL REKAM JARI -->
-                            <div class="modal fade" id="modalRekam{{ $siswa->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content modal-style-content">
-                                        <div class="modal-header modal-style-header bg-primary text-white">
-                                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-fingerprint me-2"></i>Rekam Jari - {{ $siswa->name }}</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body p-4">
-                                            <form id="form-rekam-{{ $siswa->id }}" action="{{ route('siswa.rekam_jari') }}" method="POST" data-name="{{ $siswa->name }}">
-                                                @csrf
-                                                <input type="hidden" name="siswa_id" value="{{ $siswa->id }}">
-                                                <div class="mb-4">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Pilih Alat Fingerprint</label>
-                                                    <select name="device_id" class="form-select py-2.5" style="border-radius:8px;" required>
-                                                        <option value="">-- Pilih Alat --</option>
-                                                        @foreach($devices as $d)
-                                                            <option value="{{ $d->id }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <small class="text-muted d-block mt-2">Pilih alat yang ada di depan Anda sekarang. Setelah menekan tombol rekam, alat akan masuk mode pendaftaran. Tempelkan jari siswa 2 kali ke sensor.</small>
-                                                </div>
-                                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
-                                                    <i class="fa-solid fa-paper-plane"></i> Kirim Perintah Rekam
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- MODAL HAPUS JARI ALAT -->
-                            <div class="modal fade" id="modalHapusJari{{ $siswa->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content modal-style-content">
-                                        <div class="modal-header modal-style-header bg-danger text-white">
-                                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-eraser me-2"></i>Hapus Jari - {{ $siswa->name }}</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body p-4">
-                                            <form action="{{ route('siswa.hapus_jari_alat') }}" method="POST">
-                                                @csrf
-                                                <input type="hidden" name="siswa_id" value="{{ $siswa->id }}">
-                                                <div class="mb-4">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Pilih Alat Fingerprint</label>
-                                                    <select name="device_id" class="form-select py-2.5" style="border-radius:8px;" required>
-                                                        <option value="">-- Pilih Alat --</option>
-                                                        @foreach($devices as $d)
-                                                            <option value="{{ $d->id }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <small class="text-danger d-block mt-2">Pilih alat tempat sidik jari siswa ini pernah didaftarkan. ID Sidik Jari akan dihapus secara permanen dari alat.</small>
-                                                </div>
-                                                <button type="submit" class="btn btn-danger w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
-                                                    <i class="fa-solid fa-trash-can"></i> Hapus dari Alat
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                             @endforeach
                         @else
                             <tr>
@@ -746,9 +606,157 @@
                         </button>
                     </form>
                 </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- SEMUA MODAL SISWA BERADA DI LUAR TABLE -->
+    @if(isset($siswas) && count($siswas) > 0)
+        @foreach($siswas as $siswa)
+            <!-- MODAL FORM POP-UP INPUT IZIN (DATA ASLI) -->
+            <div class="modal fade" id="modalIzin{{ $siswa->id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content modal-style-content">
+                        <div class="modal-header modal-style-header bg-warning text-dark">
+                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-envelope me-2"></i>Input Absen Manual - {{ $siswa->name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <form action="{{ url('/simpan-izin') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="siswa_id" value="{{ $siswa->id }}">
+                                
+                                <div class="mb-3 text-start">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">Pilih Status</label>
+                                    <select name="status" class="form-select py-2.5" style="border-radius:8px;" required>
+                                        <option value="Izin">Izin</option>
+                                        <option value="Sakit">Sakit</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-4 text-start">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">Alasan / Keterangan</label>
+                                    <textarea name="keterangan" class="form-control" rows="3" placeholder="Contoh: Surat dokter demam, Acara keluarga, dll." style="border-radius:8px;" required></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-warning w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Ke Cloud
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL EDIT SISWA -->
+            <div class="modal fade" id="modalEditSiswa{{ $siswa->id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content modal-style-content">
+                        <div class="modal-header modal-style-header bg-primary text-white">
+                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-user-pen me-2"></i>Edit Data Siswa</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4 text-start">
+                            <form action="{{ route('siswa.update', $siswa->id) }}" method="POST">
+                                @csrf
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">Nama Lengkap</label>
+                                    <input type="text" name="name" class="form-control py-2.5" value="{{ $siswa->name }}" style="border-radius:8px;" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">NISN</label>
+                                    <input type="text" name="nisn" class="form-control py-2.5 font-mono-custom" value="{{ $siswa->nis }}" style="border-radius:8px;" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">Pindah Kelas</label>
+                                    <select name="kelas" class="form-select py-2.5" style="border-radius:8px;" required>
+                                        @if(isset($kelases) && count($kelases) > 0)
+                                            @foreach($kelases as $kls)
+                                                <option value="{{ $kls->nama_kelas }}" {{ $siswa->kelas == $kls->nama_kelas ? 'selected' : '' }}>Kelas {{ $kls->nama_kelas }} (Ruang {{ $kls->id_ruang }})</option>
+                                            @endforeach
+                                        @else
+                                            <option value="{{ $siswa->kelas }}">{{ $siswa->kelas }} (Data kelas belum ditambahkan)</option>
+                                        @endif
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">No. WA Orang Tua</label>
+                                    <input type="text" name="no_wa" class="form-control py-2.5 font-mono-custom" value="{{ $siswa->no_wa }}" style="border-radius:8px;" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
+                                    <i class="fa-solid fa-save"></i> Simpan Perubahan
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL REKAM JARI -->
+            <div class="modal fade" id="modalRekam{{ $siswa->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content modal-style-content">
+                        <div class="modal-header modal-style-header bg-primary text-white">
+                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-fingerprint me-2"></i>Rekam Jari - {{ $siswa->name }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <form id="form-rekam-{{ $siswa->id }}" action="{{ route('siswa.rekam_jari') }}" method="POST" data-name="{{ $siswa->name }}">
+                                @csrf
+                                <input type="hidden" name="siswa_id" value="{{ $siswa->id }}">
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">Pilih Alat Fingerprint</label>
+                                    <select name="device_id" class="form-select py-2.5" style="border-radius:8px;" required>
+                                        <option value="">-- Pilih Alat --</option>
+                                        @foreach($devices as $d)
+                                            <option value="{{ $d->id }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted d-block mt-2">Pilih alat yang ada di depan Anda sekarang. Setelah menekan tombol rekam, alat akan masuk mode pendaftaran. Tempelkan jari siswa 2 kali ke sensor.</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
+                                    <i class="fa-solid fa-paper-plane"></i> Kirim Perintah Rekam
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL HAPUS JARI ALAT -->
+            <div class="modal fade" id="modalHapusJari{{ $siswa->id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content modal-style-content">
+                        <div class="modal-header modal-style-header bg-danger text-white">
+                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-eraser me-2"></i>Hapus Jari - {{ $siswa->name }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <form id="form-hapus-jari-{{ $siswa->id }}" action="{{ route('siswa.hapus_jari_alat') }}" method="POST" data-name="{{ $siswa->name }}">
+                                @csrf
+                                <input type="hidden" name="siswa_id" value="{{ $siswa->id }}">
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">Pilih Alat Fingerprint</label>
+                                    <select name="device_id" class="form-select py-2.5" style="border-radius:8px;" required>
+                                        <option value="">-- Pilih Alat --</option>
+                                        @foreach($devices as $d)
+                                            <option value="{{ $d->id }}">{{ $d->nama_alat }} - {{ $d->ip_address }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-danger d-block mt-2">Pilih alat tempat sidik jari siswa ini pernah didaftarkan. ID Sidik Jari akan dihapus secara permanen dari alat.</small>
+                                </div>
+                                <button type="submit" class="btn btn-danger w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="border: none;">
+                                    <i class="fa-solid fa-trash-can"></i> Hapus dari Alat
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @endif
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -761,6 +769,10 @@
                 event.preventDefault();
                 const siswaId = form.id.replace('form-rekam-', '');
                 handleRekamJariAction(form, siswaId);
+            } else if (form && form.id && form.id.startsWith('form-hapus-jari-')) {
+                event.preventDefault();
+                const siswaId = form.id.replace('form-hapus-jari-', '');
+                handleHapusJariAction(form, siswaId);
             }
         });
 
@@ -809,41 +821,91 @@
                     }
                     return response.json();
                 }).then(() => {
-                    // Polling status per 2 detik
-                    const poll = setInterval(() => {
-                        // Cek jika proses dibatalkan secara manual oleh user (div loading disembunyikan)
-                        if (loadingContainer.classList.contains('d-none')) {
-                            clearInterval(poll);
-                            return;
-                        }
+                    // Polling dihapus sesuai permintaan.
+                    // Menampilkan pesan sukses terkirim ke alat.
+                    loadingContainer.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-paper-plane fa-bounce fa-4x text-primary mb-4"></i>
+                            <h5 class="fw-bold">Perintah Terkirim!</h5>
+                            <p class="text-muted small mb-3">Silakan lihat layar alat ESP32 dan tempelkan jari.<br>Setelah selesai di alat, tutup jendela ini untuk merefresh data.</p>
+                            <button type="button" class="btn btn-primary px-4 rounded-3 fw-bold" onclick="location.reload()">
+                                <i class="fa-solid fa-rotate-right me-1"></i> Refresh Tabel
+                            </button>
+                        </div>
+                    `;
+                }).catch(err => {
+                    loadingContainer.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-triangle-exclamation fa-4x text-warning mb-4"></i>
+                            <h5 class="fw-bold">Tidak Bisa Diproses!</h5>
+                            <p class="text-muted small mb-3">${err.message}</p>
+                            <button type="button" class="btn btn-secondary px-4 rounded-3" onclick="location.reload()">Tutup</button>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                alert('Terjadi kesalahan sistem: ' + error.message);
+                console.error(error);
+            }
+        }
 
-                        fetch(`/cek-rekam/${siswaId}`)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.fingerprint_id !== null) {
-                                    clearInterval(poll);
-                                    loadingContainer.innerHTML = `
-                                        <div class="text-center py-5">
-                                            <i class="fa-solid fa-circle-check fa-4x text-success mb-4"></i>
-                                            <h5 class="fw-bold">Berhasil!</h5>
-                                            <p class="text-muted small mb-3">Sidik jari berhasil direkam dan disimpan.</p>
-                                            <button type="button" class="btn btn-success px-4 rounded-3" onclick="location.reload()">Selesai</button>
-                                        </div>
-                                    `;
-                                    setTimeout(() => location.reload(), 2000);
-                                } else if (data.device_status !== 'enroll' && data.device_status !== 'delete') {
-                                    clearInterval(poll);
-                                    loadingContainer.innerHTML = `
-                                        <div class="text-center py-5">
-                                            <i class="fa-solid fa-circle-xmark fa-4x text-danger mb-4"></i>
-                                            <h5 class="fw-bold">Gagal atau Timeout</h5>
-                                            <p class="text-muted small mb-3">Proses rekam jari dibatalkan oleh alat.</p>
-                                            <button type="button" class="btn btn-secondary px-4 rounded-3" onclick="location.reload()">Tutup</button>
-                                        </div>
-                                    `;
-                                }
-                            });
-                    }, 2000);
+        function handleHapusJariAction(form, siswaId) {
+            try {
+                const formData = new FormData(form);
+                const deviceId = formData.get('device_id');
+                const studentName = form.getAttribute('data-name');
+                
+                // Sembunyikan form secara paksa
+                form.style.display = 'none';
+                form.classList.add('d-none');
+                
+                // Buat div loading jika belum ada
+                let loadingContainer = document.getElementById('loading-hapus-container-' + siswaId);
+                if (!loadingContainer) {
+                    loadingContainer = document.createElement('div');
+                    loadingContainer.id = 'loading-hapus-container-' + siswaId;
+                    form.parentElement.appendChild(loadingContainer);
+                }
+                
+                loadingContainer.classList.remove('d-none');
+                loadingContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-eraser fa-beat-fade fa-4x text-danger mb-4"></i>
+                        <h5 class="fw-bold">Menunggu Penghapusan Jari...</h5>
+                        <p class="text-danger fw-bold fs-5 mb-2">${studentName}</p>
+                        <p class="text-muted small mb-4">Perintah penghapusan telah dikirim ke alat ESP32.<br>Jangan tutup jendela ini sampai proses selesai.</p>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-4 rounded-3 fw-bold" onclick="batalkanRekam(${deviceId}, ${siswaId}, this)">
+                            <i class="fa-solid fa-circle-xmark me-1"></i> Batalkan
+                        </button>
+                    </div>
+                `;
+
+                // Kirim request ke server
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                }).then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message || 'Gagal mengirim perintah'); });
+                    }
+                    return response.json();
+                }).then(() => {
+                    // Polling dihapus sesuai permintaan.
+                    // Menampilkan pesan sukses terkirim ke alat.
+                    loadingContainer.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-paper-plane fa-bounce fa-4x text-primary mb-4"></i>
+                            <h5 class="fw-bold">Perintah Hapus Terkirim!</h5>
+                            <p class="text-muted small mb-3">Tunggu proses penghapusan di alat ESP32 selesai.<br>Tutup jendela ini untuk merefresh data.</p>
+                            <button type="button" class="btn btn-primary px-4 rounded-3 fw-bold" onclick="location.reload()">
+                                <i class="fa-solid fa-rotate-right me-1"></i> Refresh Tabel
+                            </button>
+                        </div>
+                    `;
                 }).catch(err => {
                     loadingContainer.innerHTML = `
                         <div class="text-center py-5">
@@ -885,33 +947,7 @@
             });
         }
 
-        setInterval(() => {
-            // Jangan lakukan refresh jika ada modal yang sedang terbuka
-            if (document.querySelector('.modal.show')) {
-                return;
-            }
-
-            fetch(window.location.href)
-                .then(response => response.text())
-                .then(html => {
-                    // Cek lagi untuk memastikan tidak ada modal yang dibuka saat fetch berlangsung
-                    if (document.querySelector('.modal.show')) {
-                        return;
-                    }
-
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // Ambil isi area konten utama (termasuk tabel dan modal di dalamnya)
-                    const newTableBody = doc.querySelector('.table-responsive');
-                    const oldTableBody = document.querySelector('.table-responsive');
-                    
-                    if (newTableBody && oldTableBody) {
-                        oldTableBody.innerHTML = newTableBody.innerHTML;
-                    }
-                })
-                .catch(err => console.error('Gagal memuat status jari:', err));
-        }, 3000); // Update setiap 3 detik
+        // Fitur auto-refresh tabel telah dihapus sesuai permintaan.
     </script>
 <!-- MODAL PREMIUM PAYWALL -->
 <div class="modal fade" id="modalPremiumPaywall" tabindex="-1" aria-hidden="true">

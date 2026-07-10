@@ -54,8 +54,12 @@ class ValidateDeviceToken
         }
 
         // 2. ─── Rate Limiting ─────────────────────────────────────────────
-        // Identifikasi endpoint
-        $segment = $request->segment(2) ?? 'default'; // /api/presensi → segment 2 = presensi
+        // Identifikasi endpoint (support prefix /api/fingerprint)
+        $segment = $request->segment(2);
+        if ($segment === 'fingerprint') {
+            $segment = $request->segment(3) ?? 'default';
+        }
+        $segment = $segment ?? 'default';
         [$maxReq, $window] = $this->limits[$segment] ?? $this->limits['default'];
 
         // Cache key: gabungan token + endpoint

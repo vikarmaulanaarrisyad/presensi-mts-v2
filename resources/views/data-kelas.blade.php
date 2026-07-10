@@ -410,9 +410,28 @@
                         <div class="small mb-3">
                             <div class="d-flex justify-content-between text-muted mb-1">
                                 <span>Kapasitas Terisi:</span>
-                                <span class="fw-bold text-dark">{{ $kls->jumlah_siswa }} Siswa Aktif</span>
+                                <span class="fw-bold text-dark">{{ $kls->jumlah_siswa }} / {{ $kls->kapasitas }} Siswa</span>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted mb-1">
+                                <span>Wali Kelas:</span>
+                                <span class="fw-bold text-dark">{{ $kls->wali_kelas }}</span>
                             </div>
                         </div>
+
+                        @if(session('user_role') === 'kepsek' || session('user_role') === 'admin')
+                        <div class="d-flex gap-2 mt-3 pt-3 border-top">
+                            <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1 fw-bold" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#modalEditKelas{{ $kls->id }}">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <form action="{{ route('kelas.delete', $kls->id) }}" method="POST" class="flex-grow-1" onsubmit="return confirm('Peringatan: Menghapus kelas akan berdampak pada data siswa yang terhubung. Lanjutkan?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 fw-bold" style="font-size: 0.8rem;">
+                                    <i class="fa-solid fa-trash"></i> Hapus
+                                </button>
+                            </form>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -464,6 +483,46 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL EDIT KELAS -->
+    @foreach($kelases as $kls)
+    <div class="modal fade" id="modalEditKelas{{ $kls->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-style-content">
+                <div class="modal-header modal-style-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Kelas</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form action="{{ route('kelas.update', $kls->id) }}" method="POST">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Nama Kelas</label>
+                            <input type="text" name="nama_kelas" class="form-control py-2.5" value="{{ $kls->nama_kelas }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Wali Kelas</label>
+                            <input type="text" name="wali_kelas" class="form-control py-2.5" value="{{ $kls->wali_kelas }}" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">ID Ruang</label>
+                                <input type="text" name="id_ruang" class="form-control py-2.5" value="{{ $kls->id_ruang }}" required>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Kapasitas</label>
+                                <input type="number" name="kapasitas" class="form-control py-2.5" value="{{ $kls->kapasitas }}" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <i class="fa-solid fa-save"></i> Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endforeach
 
     <!-- Bootstrap JS (required for modals) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
