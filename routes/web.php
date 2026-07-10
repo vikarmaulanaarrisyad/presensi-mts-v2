@@ -43,6 +43,8 @@ Route::middleware(['premium'])->group(function () {
     // =====================================================
     Route::get('/data-siswa', [SiswaController::class, 'dataSiswa'])->name('data.siswa');
     Route::get('/api/data-siswa/datatable', [SiswaController::class, 'dataSiswaDatatable'])->name('api.data.siswa');
+    Route::get('/api/log-absensi/datatable', [SiswaController::class, 'dataAbsensiDatatable'])->name('api.log.absensi');
+    Route::get('/api/log-absensi-guru/datatable', [SiswaController::class, 'dataAbsensiGuruDatatable'])->name('api.log.absensi.guru');
     Route::post('/siswa/store', [SiswaController::class, 'store'])->name('siswa.store');
     Route::post('/siswa/update/{id}', [SiswaController::class, 'update'])->name('siswa.update');
 
@@ -53,6 +55,7 @@ Route::middleware(['premium'])->group(function () {
     Route::post('/siswa/hapus-jari-alat', [SiswaController::class, 'hapusJariAlat'])->name('siswa.hapus_jari_alat');
     Route::post('/siswa/{id}/reset-jari', [SiswaController::class, 'resetJariLokal'])->name('siswa.reset_jari');
     Route::post('/siswa/{id}/sync-jari', [SiswaController::class, 'syncFingerprint'])->name('siswa.sync_jari');
+    Route::post('/siswa/reset-semua-jari', [SiswaController::class, 'resetSemuaJari'])->name('siswa.reset_semua_jari');
 
     // PENGATURAN JADWAL ABSEN
     Route::get('/pengaturan-jadwal', [\App\Http\Controllers\AttendanceScheduleController::class, 'index'])->name('attendance.schedule');

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -7,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     
     <style>
         :root {
@@ -397,7 +399,7 @@
         </div>
 
         <div class="table-responsive" style="overflow-x: visible;">
-            <table class="custom-table">
+            <table id="tableGuruAbsensi" class="custom-table table table-borderless align-middle w-100">
                 <thead>
                     <tr>
                         <th>Nama Siswa</th>
@@ -406,39 +408,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($logAbsensi as $log)
-                    <tr>
-                        <td>
-                            <div style="font-weight: 700; color: var(--dark); font-size: 0.95rem;">
-                                {{ $siswas->firstWhere('id', $log->siswa_id)->nama ?? 'Siswa' }}
-                            </div>
-                            <div style="color: var(--text-muted); font-size: 0.8rem;">
-                                Kelas: {{ $siswas->firstWhere('id', $log->siswa_id)->kelas ?? '-' }}
-                            </div>
-                        </td>
-                        <td>
-                            <div style="font-weight: 700; color: var(--text-main); font-size: 0.9rem;">{{ \Carbon\Carbon::parse($log->created_at)->format('H:i') }} WIB</div>
-                            <div style="color: var(--text-muted); font-size: 0.8rem;"><i class="fa-regular fa-calendar me-1"></i>{{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d F Y') }}</div>
-                        </td>
-                        <td>
-                            @if($log->status === 'Hadir')
-                                <span class="bdg bdg-success"><i class="fa-solid fa-check"></i> Hadir</span>
-                            @elseif($log->status === 'Izin' || $log->status === 'Sakit')
-                                <span class="bdg bdg-warning"><i class="fa-solid fa-envelope"></i> {{ $log->status }}</span>
-                            @else
-                                <span class="bdg bdg-danger"><i class="fa-solid fa-xmark"></i> Alpa</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="3" class="text-center py-5">
-                            <div style="font-size: 3rem; color: #cbd5e1; margin-bottom: 10px;"><i class="fa-solid fa-folder-open"></i></div>
-                            <h6 class="fw-bold" style="color: var(--text-muted)">Belum ada data absensi</h6>
-                            <p class="small text-muted mb-0">Riwayat tap sidik jari akan muncul di sini.</p>
-                        </td>
-                    </tr>
-                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -492,8 +461,62 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA...", 
+        authDomain: "presensimts-80d6a.firebaseapp.com",
+        databaseURL: "{{ env('FIREBASE_DATABASE_URL') }}", 
+        projectId: "presensimts-80d6a",
+        storageBucket: "presensimts-80d6a.appspot.com",
+        messagingSenderId: "1234567890", 
+        appId: "1:123456:web:abcdef"      
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const dbRef = ref(database, 'scan_fingerprint');
+    
+    let initialLoad = true;
+
+    $(document).ready(function() {
+        window.tableGuruAbsensi = $('#tableGuruAbsensi').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: '{{ route('api.log.absensi.guru') }}',
+            columns: [
+                {data: 'nama_siswa', name: 'nama_siswa'},
+                {data: 'waktu_presensi', name: 'waktu_presensi', orderable: false, searchable: false},
+                {data: 'status', name: 'status', orderable: false, searchable: false}
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json',
+            },
+            pageLength: 20,
+            ordering: false
+        });
+        
+        onValue(dbRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (initialLoad) {
+                    initialLoad = false;
+                    return;
+                }
+                
+                if (window.tableGuruAbsensi) {
+                    window.tableGuruAbsensi.ajax.reload(null, false);
+                }
+            }
+        });
+    });
+</script>
     @include('partials.sweetalerts')
 </body>
 </html>
-

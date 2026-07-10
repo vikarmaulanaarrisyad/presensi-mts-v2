@@ -29,4 +29,5 @@ Route::middleware('throttle:60,1')->prefix('fingerprint')->group(function () {
     Route::get('/cek-status-alat', [AttendanceController::class, 'cekStatusServer']);
     Route::post('/konfirmasi-enroll', [AttendanceController::class, 'konfirmasiEnrollServer']);
     Route::post('/konfirmasi-hapus', [AttendanceController::class, 'konfirmasiHapusServer']);
+    Route::post('/konfirmasi-reset-semua', [AttendanceController::class, 'konfirmasiResetSemuaJari']);
 });

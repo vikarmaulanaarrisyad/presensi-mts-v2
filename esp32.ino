@@ -83,6 +83,7 @@ void konfirmasiEnrollServer(int id, String polaHex, String status);
 void prosesSync(int id, String polaHex);
 void prosesHapus(int id, int commandId);
 void konfirmasiHapusServer(int id, int commandId);
+void prosesHapusSemuaJari(FirebaseJsonArray& ids);
 void bunyiBuzzer(int jumlah, int durasi);
 void loadSavedConfig();
 String getFingerprintTemplateHex();
@@ -492,6 +493,24 @@ void cekDataFirebase() {
         Firebase.RTDB.deleteNode(&fbdo, ("/commands/" + deviceToken).c_str());
       }
     }
+    else if (mode == "delete_all" && fingerAvailable) {
+      // Ambil array fingerprint_ids dari Firebase
+      String idsPath = "/commands/" + deviceToken + "/fingerprint_ids";
+      if (Firebase.RTDB.getArray(&fbdo, idsPath.c_str())) {
+        FirebaseJsonArray& arr = fbdo.jsonArray();
+        prosesHapusSemuaJari(arr);
+      } else {
+        // Fallback: jika tidak ada array, langsung wipe seluruh sensor
+        Serial.println("[DELETE_ALL] Tidak ada array ID, melakukan wipe penuh...");
+        cetakLCD(0, " RESET SEMUA    ");
+        cetakLCD(1, " MENGHAPUS...   ");
+        bunyiBuzzer(1, 1000);
+        finger.emptyDatabase();
+        cetakLCD(1, " SELESAI!       ");
+        delay(2000);
+      }
+      Firebase.RTDB.deleteNode(&fbdo, ("/commands/" + deviceToken).c_str());
+    }
     else if (mode == "wipe_database" && fingerAvailable) {
       cetakLCD(0, " FORMAT SENSOR! ");
       cetakLCD(1, " MENGHAPUS DATA ");
@@ -814,6 +833,131 @@ void prosesSync(int id, String polaHex) {
     cetakLCD(1, " KODE ERR: " + String(p));
     bunyiBuzzer(3, 200);
   }
+  delay(2000);
+}
+
+// ================= HAPUS SEMUA JARI DARI ARRAY ID =================
+
+void prosesHapusSemuaJari(FirebaseJsonArray& ids) {
+  if (!fingerAvailable) return;
+  
+  int total = ids.size();
+  if (total == 0) {
+    // Tidak ada ID spesifik — wipe seluruh database sensor
+    Serial.println("[DELETE_ALL] Array kosong, wipe seluruh database sensor...");
+    cetakLCD(0, " RESET SEMUA    ");
+    cetakLCD(1, " WIPE SENSOR... ");
+    bunyiBuzzer(2, 300);
+    finger.emptyDatabase();
+    cetakLCD(1, " SELESAI!       ");
+    delay(1000);
+
+    // Kirim konfirmasi ke Laravel
+    HTTPClient httpWipe;
+    String wipeUrl = baseUrl + "/konfirmasi-reset-semua";
+    httpWipe.setTimeout(5000);
+    httpWipe.begin(wipeUrl);
+    httpWipe.addHeader("Content-Type", "application/json");
+    httpWipe.addHeader("ngrok-skip-browser-warning", "69420");
+    StaticJsonDocument<256> wDoc;
+    wDoc["device_token"] = deviceToken;
+    wDoc["total_dihapus"] = 0;
+    wDoc["total_gagal"]   = 0;
+    wDoc["status"]        = "wipe_full";
+    String wBody; serializeJson(wDoc, wBody);
+    int wCode = httpWipe.POST(wBody);
+    Serial.println("[DELETE_ALL] Konfirmasi wipe ke Laravel: HTTP " + String(wCode));
+    httpWipe.end();
+
+    // Kirim ke Firebase
+    if (Firebase.ready()) {
+      FirebaseJson fbJson;
+      fbJson.set("status", "success");
+      fbJson.set("type", "wipe_full");
+      fbJson.set("device_token", deviceToken.c_str());
+      fbJson.set("total_dihapus", 0);
+      fbJson.set("timestamp", (int)time(nullptr));
+      String fbPath = "/reset_all_responses/" + deviceToken;
+      Firebase.RTDB.setJSON(&fbdo, fbPath.c_str(), &fbJson);
+      Serial.println("[DELETE_ALL] Notifikasi wipe dikirim ke Firebase.");
+    }
+    delay(1000);
+    return;
+  }
+
+  cetakLCD(0, " RESET SEMUA    ");
+  cetakLCD(1, "TOTAL: " + String(total) + " JARI");
+  bunyiBuzzer(2, 300);
+  delay(1500);
+
+  int berhasil = 0;
+  int gagal = 0;
+
+  for (int i = 0; i < total; i++) {
+    FirebaseJsonData jsonData;
+    ids.get(jsonData, i);
+    int fingerId = jsonData.intValue;
+    if (fingerId <= 0) continue;
+
+    cetakLCD(0, "HAPUS ID: " + String(fingerId) + "    ");
+    cetakLCD(1, String(i + 1) + "/" + String(total) + " PROSES...");
+    Serial.println("[DELETE_ALL] Menghapus ID: " + String(fingerId));
+
+    uint8_t p = finger.deleteModel(fingerId);
+    if (p == FINGERPRINT_OK) {
+      Serial.println("[DELETE_ALL] ID " + String(fingerId) + " BERHASIL dihapus.");
+      berhasil++;
+    } else {
+      Serial.println("[DELETE_ALL] ID " + String(fingerId) + " GAGAL (err: " + String(p) + ")");
+      gagal++;
+    }
+    delay(200);
+  }
+
+  // Tampilkan ringkasan
+  cetakLCD(0, "RESET SELESAI!  ");
+  cetakLCD(1, "OK:" + String(berhasil) + " GAGAL:" + String(gagal));
+  bunyiBuzzer(berhasil > 0 ? 2 : 3, berhasil > 0 ? 200 : 100);
+
+  Serial.println("[DELETE_ALL] Selesai. Berhasil: " + String(berhasil) + " | Gagal: " + String(gagal));
+
+  // Kirim konfirmasi ke Laravel
+  HTTPClient http;
+  String targetUrl = baseUrl + "/konfirmasi-reset-semua";
+  http.setTimeout(5000);
+  http.begin(targetUrl);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("ngrok-skip-browser-warning", "69420");
+
+  StaticJsonDocument<256> doc;
+  doc["device_token"] = deviceToken;
+  doc["total_dihapus"] = berhasil;
+  doc["total_gagal"]   = gagal;
+  doc["status"]        = (gagal == 0) ? "success" : "partial";
+
+  String requestBody;
+  serializeJson(doc, requestBody);
+  int code = http.POST(requestBody);
+  Serial.println("[DELETE_ALL] Konfirmasi ke Laravel: HTTP " + String(code));
+  http.end();
+
+  // Kirim notifikasi ke Firebase agar web bisa reload tabel secara real-time
+  if (Firebase.ready()) {
+    FirebaseJson fbJson;
+    fbJson.set("status", (gagal == 0) ? "success" : "partial");
+    fbJson.set("type", "delete_all");
+    fbJson.set("device_token", deviceToken.c_str());
+    fbJson.set("total_dihapus", berhasil);
+    fbJson.set("total_gagal", gagal);
+    fbJson.set("timestamp", (int)time(nullptr));
+    String fbPath = "/reset_all_responses/" + deviceToken;
+    if (Firebase.RTDB.setJSON(&fbdo, fbPath.c_str(), &fbJson)) {
+      Serial.println("[DELETE_ALL] Notifikasi dikirim ke Firebase path: " + fbPath);
+    } else {
+      Serial.println("[DELETE_ALL] Gagal kirim ke Firebase: " + fbdo.errorReason());
+    }
+  }
+
   delay(2000);
 }
 

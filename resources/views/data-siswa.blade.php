@@ -9,6 +9,11 @@
                         <i class="fa-solid fa-user-plus fs-5"></i> Tambah Siswa
                     </button>
                     @endif
+            @if(session('user_role') === 'admin')
+                    <button id="btnResetSemuaJari" class="btn btn-danger fw-bold px-3 py-2 rounded-3 shadow-sm d-flex align-items-center gap-2" style="font-size: 0.88rem; border:none;" onclick="konfirmasiResetSemuaJari()">
+                        <i class="fa-solid fa-fingerprint fs-5"></i> Reset Semua Jari
+                    </button>
+            @endif
     </x-slot>
 
     <x-slot name="styles">
@@ -87,6 +92,7 @@
                             </tr>
                         </thead>
                         <tbody style="font-size: 0.9rem; color: #475569;">
+                            
                         </tbody>
                     </table>
                 </div>
@@ -677,7 +683,17 @@
             $('#tabelSiswa').DataTable({
                 processing: true,
                 serverSide: true,
-                ajax: '{{ route('api.data.siswa') }}',
+                ajax: {
+                    url: '{{ route('api.data.siswa') }}',
+                    error: function (xhr, error, code) {
+                        console.error('DataTables Ajax Error:', error, code, xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Memuat Data',
+                            text: 'Gagal mengambil data dari server. Silakan cek console untuk detailnya (F12).'
+                        });
+                    }
+                },
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                     { data: 'name', name: 'name' },
@@ -685,10 +701,7 @@
                     { data: 'kelas', name: 'kelas' },
                     { data: 'fingerprint_id', name: 'fingerprint_id' },
                     { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-center' }
-                ],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json',
-                }
+                ]
             });
 
             // SweetAlert2 event delegation
@@ -854,6 +867,73 @@
                 });
             });
         });
+    </script>
+
+    <script>
+        function konfirmasiResetSemuaJari() {
+            Swal.fire({
+                title: '⚠️ Reset Semua Sidik Jari?',
+                html: `<div class="text-start">
+                    <p class="mb-2">Tindakan ini akan:</p>
+                    <ul class="small text-danger fw-bold">
+                        <li>Menghapus semua data fingerprint dari <strong>database</strong></li>
+                        <li>Mengirim perintah hapus ke <strong>semua alat ESP32</strong></li>
+                        <li>Semua siswa harus <strong>mendaftar ulang sidik jari</strong></li>
+                    </ul>
+                    <p class="mt-2 text-muted small">Tindakan ini <strong>tidak dapat dibatalkan</strong>.</p>
+                    <p class="mt-2 fw-bold">Ketik <code>RESET</code> untuk konfirmasi:</p>
+                    <input type="text" id="konfirmasi-reset-input" class="form-control mt-1" placeholder="Ketik RESET di sini">
+                </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fa-solid fa-fingerprint me-1"></i> Ya, Reset Semua!',
+                cancelButtonText: 'Batal',
+                preConfirm: () => {
+                    const val = document.getElementById('konfirmasi-reset-input').value;
+                    if (val !== 'RESET') {
+                        Swal.showValidationMessage('Ketik RESET (huruf kapital) untuk melanjutkan!');
+                        return false;
+                    }
+                    return true;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const btn = document.getElementById('btnResetSemuaJari');
+                    const originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Memproses...';
+
+                    $.ajax({
+                        url: '{{ route("siswa.reset_semua_jari") }}',
+                        type: 'POST',
+                        data: { _token: '{{ csrf_token() }}' },
+                        success: function(response) {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+
+                            const icon = response.status === 'success' ? 'success' : 'warning';
+                            Swal.fire({
+                                icon: icon,
+                                title: response.status === 'success' ? 'Berhasil Direset!' : 'Perhatian',
+                                text: response.message,
+                                confirmButtonColor: '#10b981'
+                            }).then(() => {
+                                $('#tabelSiswa').DataTable().ajax.reload(null, false);
+                            });
+                        },
+                        error: function(xhr) {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            Swal.fire('Gagal!', xhr.responseJSON?.message || 'Terjadi kesalahan sistem.', 'error');
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, off, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -931,6 +1011,33 @@
                 }
             });
         };
+
+        // ===== LISTENER RESET SEMUA JARI =====
+        // Mendengarkan notifikasi ketika ESP32 selesai menghapus semua jari (delete_all)
+        // Dibuat per device yang terdaftar
+        @foreach(\App\Models\Device::all() as $dev)
+        (function() {
+            const resetRef = ref(database, 'reset_all_responses/{{ $dev->device_token }}');
+            let resetInitialLoad = true;
+            onValue(resetRef, (snapshot) => {
+                if (resetInitialLoad) { resetInitialLoad = false; return; }
+                const data = snapshot.val();
+                if (!data) return;
+                off(resetRef);
+                remove(resetRef);
+
+                const icon   = data.status === 'success' ? 'success' : 'warning';
+                const title  = data.status === 'success' ? 'Reset Selesai!' : 'Reset Selesai (Sebagian)';
+                const text   = `Alat: {{ $dev->nama_alat }}\nBerhasil: ${data.total_dihapus ?? 0} jari\nGagal: ${data.total_gagal ?? 0} jari`;
+
+                Swal.fire({ icon, title, text, confirmButtonColor: '#10b981' }).then(() => {
+                    if (window.$ && $('#tabelSiswa').length) {
+                        $('#tabelSiswa').DataTable().ajax.reload(null, false);
+                    }
+                });
+            });
+        })();
+        @endforeach
     </script>
     </x-slot>
     @include('partials.sweetalerts')

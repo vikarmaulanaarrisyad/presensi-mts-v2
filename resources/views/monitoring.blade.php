@@ -7,7 +7,9 @@
 
         <script src="{{ asset('js/tailwindcss.js') }}"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <style>
             /* --- RESET & BASIC STYLING --- */
             * {
@@ -510,7 +512,7 @@
                 </div>
 
                 <div style="width: 100%; overflow-x: auto;">
-                    <table>
+                    <table id="tableLogAbsensi" class="display" style="width:100%">
                         <thead>
                             <tr>
                                 <th style="width: 60px;">No</th>
@@ -523,65 +525,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($logAbsensi as $index => $log)
-                                <tr id="row-siswa-{{ $log->siswa_id }}">
-                                    <td>{{ $index + 1 }}</td>
-                                    <td style="font-weight: 600;">{{ $log->nis ?? '-' }}</td>
-                                    <td style="font-weight: 700;">{{ $log->nama_siswa }}</td>
-                                    <td>{{ $log->kelas ?? '-' }}</td>
-                                    
-                                    {{-- Kolom Masuk --}}
-                                    <td id="masuk-{{ $log->siswa_id }}">
-                                        @if($log->waktu_masuk)
-                                            @php
-                                                $isTerlambat = (strtolower($log->keterangan_masuk) === 'terlambat');
-                                                $cssMasuk = $isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
-                                                $iconMasuk = $isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
-                                            @endphp
-                                            <span class="status-badge {{ $cssMasuk }}">
-                                                <i class="fa-solid {{ $iconMasuk }}"></i> {{ \Carbon\Carbon::parse($log->waktu_masuk)->format('H:i') }}
-                                            </span>
-                                            <div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">
-                                                {{ $log->keterangan_masuk }}
-                                            </div>
-                                        @else
-                                            <span style="color:#cbd5e1; font-weight:bold;">-</span>
-                                        @endif
-                                    </td>
-
-                                    {{-- Kolom Pulang --}}
-                                    <td id="pulang-{{ $log->siswa_id }}">
-                                        @if($log->waktu_pulang)
-                                            <span class="status-badge badge-premium-hadir" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
-                                                <i class="fa-solid fa-right-from-bracket"></i> {{ \Carbon\Carbon::parse($log->waktu_pulang)->format('H:i') }}
-                                            </span>
-                                        @else
-                                            <span style="color:#cbd5e1; font-weight:bold;">-</span>
-                                        @endif
-                                    </td>
-
-                                    <td style="text-align: center;">
-                                        @if(!$log->waktu_masuk && !$log->waktu_pulang)
-                                            <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
-                                                <button class="btn-action-izin" onclick="openModalIzin('{{ $log->siswa_id }}')">
-                                                    <i class="fa-solid fa-user-pen"></i> Izin
-                                                </button>
-                                                <button class="btn-action-alpha" onclick="openModalAlpha('{{ $log->siswa_id }}')">
-                                                    <i class="fa-solid fa-user-xmark"></i> Alpha
-                                                </button>
-                                            </div>
-                                        @else
-                                            <span style="color: #cbd5e1; font-weight: bold;">-</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">
-                                        Tidak ada aktivitas log absensi hari ini.
-                                    </td>
-                                </tr>
-                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -671,10 +614,29 @@
             }
 
             // Real-time UI dipicu oleh Firebase (lihat script type="module" di bawah)
+            $(document).ready(function() {
+                window.tableLogAbsensi = $('#tableLogAbsensi').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: '{{ route('api.log.absensi') }}',
+                        error: function(xhr, error, code) {
+                            console.error('DataTables Ajax Error [monitoring]:', error, code, xhr.responseText);
+                        }
+                    },
+                    columns: [
+                        {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
+                        {data: 'nis', name: 'nis'},
+                        {data: 'nama_siswa', name: 'nama_siswa'},
+                        {data: 'kelas', name: 'kelas'},
+                        {data: 'waktu_masuk', name: 'waktu_masuk'},
+                        {data: 'waktu_pulang', name: 'waktu_pulang'},
+                        {data: 'aksi', name: 'aksi', orderable: false, searchable: false}
+                    ]
+                });
+            });
         </script>
         @include('partials.sweetalerts')
-</body>
-    </html>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -707,114 +669,13 @@
                     return;
                 }
 
-                // 1. Hapus pesan "Tidak ada aktivitas" jika ada
-                const emptyRow = document.querySelector('tbody tr td[colspan="7"]');
-                if (emptyRow) {
-                    emptyRow.parentElement.remove();
+                // Reload datatable ketika ada scan fingerprint baru
+                if (window.tableLogAbsensi) {
+                    window.tableLogAbsensi.ajax.reload(null, false);
                 }
 
-                const tbody = document.querySelector('tbody');
-                
-                // 2. Cek apakah siswa sudah ada di tabel
-                let existingRow = document.getElementById('row-siswa-' + data.siswa_id);
-                
-                if (existingRow) {
-                    // Update baris yang sudah ada
-                    if (data.status === 'Masuk') {
-                        let tdMasuk = document.getElementById('masuk-' + data.siswa_id);
-                        if (tdMasuk) {
-                            let isTerlambat = data.keterangan && data.keterangan.toLowerCase() === 'terlambat';
-                            let cssMasuk = isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
-                            let iconMasuk = isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
-                            
-                            tdMasuk.innerHTML = `
-                                <span class="status-badge ${cssMasuk}">
-                                    <i class="fa-solid ${iconMasuk}"></i> ${data.waktu}
-                                </span>
-                                <div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">${data.keterangan || 'Hadir'}</div>
-                            `;
-                            // Highlight update
-                            tdMasuk.style.transition = 'background-color 0.5s ease';
-                            tdMasuk.style.backgroundColor = '#d1fae5';
-                            setTimeout(() => tdMasuk.style.backgroundColor = 'transparent', 1000);
-                        }
-                    } else if (data.status === 'Pulang') {
-                        let tdPulang = document.getElementById('pulang-' + data.siswa_id);
-                        if (tdPulang) {
-                            tdPulang.innerHTML = `
-                                <span class="status-badge badge-premium-hadir" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
-                                    <i class="fa-solid fa-right-from-bracket"></i> ${data.waktu}
-                                </span>
-                            `;
-                            // Highlight update
-                            tdPulang.style.transition = 'background-color 0.5s ease';
-                            tdPulang.style.backgroundColor = '#bae6fd';
-                            setTimeout(() => tdPulang.style.backgroundColor = 'transparent', 1000);
-                        }
-                    }
-                    
-                    // Hilangkan tombol aksi jika sudah absen masuk/pulang
-                    let tdAksi = existingRow.querySelector('td:last-child');
-                    if (tdAksi && tdAksi.innerHTML.includes('button')) {
-                        tdAksi.innerHTML = '<span style="color: #cbd5e1; font-weight: bold;">-</span>';
-                    }
-                } else {
-                    // Buat elemen baris baru
-                    const newRow = document.createElement('tr');
-                    newRow.id = 'row-siswa-' + data.siswa_id;
-                    
-                    let kontenMasuk = '<span style="color:#cbd5e1; font-weight:bold;">-</span>';
-                    let kontenPulang = '<span style="color:#cbd5e1; font-weight:bold;">-</span>';
-                    
-                    if (data.status === 'Masuk') {
-                        let isTerlambat = data.keterangan && data.keterangan.toLowerCase() === 'terlambat';
-                        let cssMasuk = isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
-                        let iconMasuk = isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
-                        kontenMasuk = `
-                            <span class="status-badge ${cssMasuk}">
-                                <i class="fa-solid ${iconMasuk}"></i> ${data.waktu}
-                            </span>
-                            <div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">${data.keterangan || 'Hadir'}</div>
-                        `;
-                    } else if (data.status === 'Pulang') {
-                        kontenPulang = `
-                            <span class="status-badge badge-premium-hadir" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">
-                                <i class="fa-solid fa-right-from-bracket"></i> ${data.waktu}
-                            </span>
-                        `;
-                    }
-                    
-                    newRow.innerHTML = `
-                        <td>1</td>
-                        <td style="font-weight: 600;">${data.nis || '-'}</td>
-                        <td style="font-weight: 700;">${data.nama_siswa || '-'}</td>
-                        <td>${data.kelas || '-'}</td>
-                        <td id="masuk-${data.siswa_id}">${kontenMasuk}</td>
-                        <td id="pulang-${data.siswa_id}">${kontenPulang}</td>
-                        <td style="text-align: center;">
-                            <span style="color: #cbd5e1; font-weight: bold;">-</span>
-                        </td>
-                    `;
-                    
-                    // Tambahkan di paling atas tabel
-                    tbody.insertBefore(newRow, tbody.firstChild);
-
-                    // Update nomor urut baris
-                    let rowNum = 1;
-                    tbody.querySelectorAll('tr').forEach(tr => {
-                        const firstTd = tr.querySelector('td:first-child');
-                        if (firstTd && !firstTd.hasAttribute('colspan')) {
-                            firstTd.innerText = rowNum++;
-                        }
-                    });
-                    
-                    newRow.style.transition = 'background-color 0.5s ease';
-                    newRow.style.backgroundColor = '#d1fae5';
-                    setTimeout(() => newRow.style.backgroundColor = 'transparent', 1000);
-                }
-
-                // 3. Update counter statistik dengan halus
-                if (data.status && data.status === 'Masuk' && !existingRow) {
+                // Update counter statistik dengan halus
+                if (data.status && data.status === 'Masuk') {
                     const statBox = document.querySelector('.icon-hadir')?.parentElement;
                     if (statBox) {
                         const valEl = statBox.querySelector('.stat-value');
@@ -829,3 +690,5 @@
             }
         });
     </script>
+</body>
+</html>

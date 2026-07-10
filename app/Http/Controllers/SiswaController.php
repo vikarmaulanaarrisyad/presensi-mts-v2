@@ -508,6 +508,197 @@ class SiswaController extends Controller
             ->make(true);
     }
 
+    /**
+     * Reset SEMUA sidik jari dari database lokal + kirim perintah hapus ke semua alat ESP32
+     */
+    public function resetSemuaJari(Request $request)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return response()->json(['error' => 'Unauthorized'], 401);
+
+        if (session('user_role') !== 'admin') {
+            return response()->json(['status' => 'error', 'message' => 'Hanya Admin yang dapat melakukan reset semua jari.'], 403);
+        }
+
+        // Ambil semua siswa yang punya fingerprint_id
+        $siswasWithJari = DB::table('siswas')
+            ->whereNotNull('fingerprint_id')
+            ->where('fingerprint_id', '!=', '')
+            ->get();
+
+        if ($siswasWithJari->isEmpty()) {
+            return response()->json(['status' => 'warning', 'message' => 'Tidak ada siswa yang memiliki data sidik jari untuk direset.']);
+        }
+
+        $devices = DB::table('devices')->get();
+        $fingerprintIds = $siswasWithJari->pluck('fingerprint_id')->filter()->unique()->values();
+
+        // 1. Kirim perintah delete_all ke setiap alat ESP32 via Firebase
+        $berhasilAlat = 0;
+        if ($devices->isNotEmpty()) {
+            foreach ($devices as $device) {
+                try {
+                    app('firebase.database')->getReference('commands/' . $device->device_token)->set([
+                        'mode'            => 'delete_all',
+                        'fingerprint_ids' => $fingerprintIds->toArray(),
+                        'command_id'      => time(),
+                        'timestamp'       => now()->timestamp,
+                    ]);
+                    $berhasilAlat++;
+                } catch (\Exception $e) {
+                    // Lanjutkan ke alat berikutnya
+                }
+            }
+        }
+
+        // 2. Reset semua fingerprint_id & pola_sidik_jari di database
+        DB::table('siswas')
+            ->whereNotNull('fingerprint_id')
+            ->update([
+                'fingerprint_id'   => null,
+                'pola_sidik_jari'  => null,
+            ]);
+
+        $totalSiswa = $siswasWithJari->count();
+        $pesan = "Berhasil mereset sidik jari {$totalSiswa} siswa dari database.";
+        if ($berhasilAlat > 0) {
+            $pesan .= " Perintah hapus dikirim ke {$berhasilAlat} alat ESP32.";
+        } else {
+            $pesan .= " Tidak ada alat ESP32 yang terdaftar (hanya reset database).";
+        }
+
+        return response()->json(['status' => 'success', 'message' => $pesan, 'total_siswa' => $totalSiswa, 'total_alat' => $berhasilAlat]);
+    }
+
+    /**
+     * DataTables endpoint untuk Data Absensi Real-time
+     */
+    public function dataAbsensiDatatable(Request $request)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $hariIni = Carbon::today('Asia/Jakarta');
+        
+        $query = DB::table('attendances')
+            ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
+            ->select(
+                'attendances.id',
+                'attendances.siswa_id',
+                'attendances.tanggal',
+                'attendances.waktu_masuk',
+                'attendances.waktu_pulang',
+                'attendances.status_masuk',
+                'attendances.keterangan_masuk',
+                'attendances.status_pulang',
+                'attendances.keterangan_pulang',
+                'siswas.name as nama_siswa',
+                'siswas.nis',
+                'siswas.kelas'
+            )
+            ->where('attendances.tanggal', $hariIni->toDateString())
+            ->orderBy('attendances.waktu_masuk', 'desc');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('nis', function ($log) {
+                return '<span style="font-weight: 600;">' . ($log->nis ?? '-') . '</span>';
+            })
+            ->editColumn('nama_siswa', function ($log) {
+                return '<span style="font-weight: 700;">' . $log->nama_siswa . '</span>';
+            })
+            ->editColumn('waktu_masuk', function ($log) {
+                if ($log->waktu_masuk) {
+                    $isTerlambat = (strtolower($log->keterangan_masuk) === 'terlambat');
+                    $cssMasuk = $isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
+                    $iconMasuk = $isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
+                    return '<span class="status-badge ' . $cssMasuk . '"><i class="fa-solid ' . $iconMasuk . '"></i> ' . \Carbon\Carbon::parse($log->waktu_masuk)->format('H:i') . '</span>' .
+                           '<div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">' . $log->keterangan_masuk . '</div>';
+                } else {
+                    return '<span class="status-badge badge-premium-alpa"><i class="fa-solid fa-xmark"></i> Belum Masuk</span>';
+                }
+            })
+            ->editColumn('waktu_pulang', function ($log) {
+                if ($log->waktu_pulang) {
+                    return '<span class="status-badge badge-premium-hadir" style="background: rgba(16, 185, 129, 0.1) !important; color: #10b981 !important; border-color: rgba(16, 185, 129, 0.2) !important;"><i class="fa-solid fa-house"></i> ' . \Carbon\Carbon::parse($log->waktu_pulang)->format('H:i') . '</span>' .
+                           '<div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">' . $log->keterangan_pulang . '</div>';
+                } else {
+                    return '<span class="status-badge badge-premium-alpa"><i class="fa-solid fa-xmark"></i> Belum Pulang</span>';
+                }
+            })
+            ->addColumn('aksi', function ($log) {
+                if (!$log->waktu_masuk && !$log->waktu_pulang) {
+                    return '
+                    <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                        <button class="btn-action-izin" onclick="openModalIzin(\'' . $log->siswa_id . '\')">
+                            <i class="fa-solid fa-user-pen"></i> Izin
+                        </button>
+                        <button class="btn-action-alpha" onclick="openModalAlpha(\'' . $log->siswa_id . '\')">
+                            <i class="fa-solid fa-user-xmark"></i> Alpha
+                        </button>
+                    </div>';
+                } else {
+                    return '<span style="color: #cbd5e1; font-weight: bold;">-</span>';
+                }
+            })
+            ->rawColumns(['nis', 'nama_siswa', 'waktu_masuk', 'waktu_pulang', 'aksi'])
+            ->setRowId(function ($log) {
+                return 'row-siswa-' . $log->siswa_id;
+            })
+            ->make(true);
+    }
+
+    /**
+     * DataTables endpoint untuk Data Absensi Guru (Live Feed)
+     */
+    public function dataAbsensiGuruDatatable(Request $request)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $hariIni = Carbon::today('Asia/Jakarta');
+        
+        $query = DB::table('attendances')
+            ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
+            ->select(
+                'attendances.*',
+                'siswas.id as siswa_id', 
+                'siswas.name as nama_siswa', 
+                'siswas.kelas'
+            )
+            ->where('attendances.tanggal', $hariIni->toDateString())
+            ->orderBy('attendances.updated_at', 'desc');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('nama_siswa', function ($log) {
+                return '<div style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">' . $log->nama_siswa . '</div>
+                        <div style="color: #64748b; font-size: 0.8rem;">Kelas: ' . ($log->kelas ?? '-') . '</div>';
+            })
+            ->editColumn('waktu_presensi', function ($log) {
+                $waktu = $log->waktu_pulang ? $log->waktu_pulang : $log->waktu_masuk;
+                $formattedTime = $waktu ? \Carbon\Carbon::parse($waktu)->format('H:i') : '-';
+                return '<div style="font-weight: 700; color: #334155; font-size: 0.9rem;">' . $formattedTime . ' WIB</div>
+                        <div style="color: #64748b; font-size: 0.8rem;"><i class="fa-regular fa-calendar me-1"></i>' . \Carbon\Carbon::parse($log->tanggal)->translatedFormat('d F Y') . '</div>';
+            })
+            ->editColumn('status', function ($log) {
+                $status = $log->waktu_pulang ? $log->status_pulang : $log->status_masuk;
+                
+                if($status === 'Hadir') {
+                    return '<span class="badge bg-success bg-opacity-10 text-success border px-2 py-1 fw-semibold"><i class="fa-solid fa-check"></i> Hadir</span>';
+                } elseif($status === 'Izin' || $status === 'Sakit') {
+                    return '<span class="badge bg-warning bg-opacity-10 text-warning border px-2 py-1 fw-semibold"><i class="fa-solid fa-envelope"></i> ' . $status . '</span>';
+                } else {
+                    return '<span class="badge bg-danger bg-opacity-10 text-danger border px-2 py-1 fw-semibold"><i class="fa-solid fa-xmark"></i> Alpa</span>';
+                }
+            })
+            ->rawColumns(['nama_siswa', 'waktu_presensi', 'status'])
+            ->setRowId(function ($log) {
+                return 'row-guru-' . $log->siswa_id;
+            })
+            ->make(true);
+    }
+
     // ... fungsi dataKelas, storeKelas, simpanIzin, rekapPdf, tesFirebase TETAP SAMA ...
     /**
      * Halaman Data Kelas

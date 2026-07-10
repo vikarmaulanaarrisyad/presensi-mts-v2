@@ -28,7 +28,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($gurus as $index => $guru)
+                            @foreach($gurus as $index => $guru)
                             <tr>
                                 <td class="font-mono-custom text-muted">{{ $index + 1 }}</td>
                                 <td>
@@ -52,78 +52,74 @@
                                 </td>
                             </tr>
 
-                            <!-- Modal Edit -->
-                            <div class="modal fade" id="modalEdit{{ $guru->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content modal-style-content">
-                                        <div class="modal-header modal-style-header bg-primary text-white">
-                                            <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-edit me-2"></i>Edit Data Guru</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body p-4">
-                                            <form action="{{ route('guru.update', $guru->id) }}" method="POST">
-                                                @csrf
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Nama Lengkap</label>
-                                                    <input type="text" name="name" class="form-control py-2.5" value="{{ $guru->name }}" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Email / Username</label>
-                                                    <input type="email" name="email" class="form-control py-2.5" value="{{ $guru->email }}" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Role Jabatan</label>
-                                                    <select name="role" class="form-select py-2.5" required>
-                                                        <option value="guru" {{ $guru->role == 'guru' ? 'selected' : '' }}>Guru</option>
-                                                        <option value="kepsek" {{ $guru->role == 'kepsek' ? 'selected' : '' }}>Kepala Sekolah</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-4">
-                                                    <label class="form-label fw-bold small text-muted text-uppercase">Ganti Password (Opsional)</label>
-                                                    <input type="password" name="password" class="form-control py-2.5" placeholder="Kosongkan jika tidak ingin diubah">
-                                                </div>
-                                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2"><i class="fa-solid fa-save"></i> Simpan Perubahan</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Modal Hapus -->
-                            <div class="modal fade" id="modalHapus{{ $guru->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-sm">
-                                    <div class="modal-content modal-style-content" style="text-align: center;">
-                                        <div class="modal-body p-4">
-                                            <div class="mb-3 text-danger">
-                                                <i class="fa-solid fa-circle-exclamation fa-3x"></i>
-                                            </div>
-                                            <h5 class="fw-bold mb-3">Hapus Akun?</h5>
-                                            <p class="text-muted small mb-4">Apakah Anda yakin ingin menghapus akun <strong>{{ $guru->name }}</strong>? Data tidak bisa dikembalikan.</p>
-                                            <form action="{{ route('guru.delete', $guru->id) }}" method="POST">
-                                                @csrf
-                                                @method('DELETE')
-                                                <div class="d-flex gap-2">
-                                                    <button type="button" class="btn btn-light w-50 fw-bold rounded-pill" data-bs-dismiss="modal">Batal</button>
-                                                    <button type="submit" class="btn btn-danger w-50 fw-bold rounded-pill">Ya, Hapus</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-5">
-                                    <i class="fa-solid fa-users-slash fa-3x mb-3 opacity-25"></i>
-                                    <p class="mb-0 fw-bold">Belum Ada Data Guru</p>
-                                </td>
-                            </tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+        @foreach($gurus as $guru)
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEdit{{ $guru->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content modal-style-content">
+                    <div class="modal-header modal-style-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold" style="font-size:1.05rem;"><i class="fa-solid fa-edit me-2"></i>Edit Data Guru</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form action="{{ route('guru.update', $guru->id) }}" method="POST">
+                            @csrf
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Nama Lengkap</label>
+                                <input type="text" name="name" class="form-control py-2.5" value="{{ $guru->name }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Email / Username</label>
+                                <input type="email" name="email" class="form-control py-2.5" value="{{ $guru->email }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Role Jabatan</label>
+                                <select name="role" class="form-select py-2.5" required>
+                                    <option value="guru" {{ $guru->role == 'guru' ? 'selected' : '' }}>Guru</option>
+                                    <option value="kepsek" {{ $guru->role == 'kepsek' ? 'selected' : '' }}>Kepala Sekolah</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Ganti Password (Opsional)</label>
+                                <input type="password" name="password" class="form-control py-2.5" placeholder="Kosongkan jika tidak ingin diubah">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2"><i class="fa-solid fa-save"></i> Simpan Perubahan</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Hapus -->
+        <div class="modal fade" id="modalHapus{{ $guru->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content modal-style-content" style="text-align: center;">
+                    <div class="modal-body p-4">
+                        <div class="mb-3 text-danger">
+                            <i class="fa-solid fa-circle-exclamation fa-3x"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3">Hapus Akun?</h5>
+                        <p class="text-muted small mb-4">Apakah Anda yakin ingin menghapus akun <strong>{{ $guru->name }}</strong>? Data tidak bisa dikembalikan.</p>
+                        <form action="{{ route('guru.delete', $guru->id) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-light w-50 fw-bold rounded-pill" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-danger w-50 fw-bold rounded-pill">Ya, Hapus</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
 
         <!-- Modal Tambah -->
         <div class="modal fade" id="modalTambah" tabindex="-1" aria-hidden="true">

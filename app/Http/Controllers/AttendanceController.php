@@ -355,6 +355,53 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Konfirmasi dari ESP32 setelah menyelesaikan perintah delete_all (reset semua jari)
+     */
+    public function konfirmasiResetSemuaJari(Request $request)
+    {
+        $token = $request->input('device_token');
+        $device = DB::table('devices')->where('device_token', $token)->first();
+        if (!$device) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized Device Token.'], 401);
+        }
+
+        $totalDihapus = $request->input('total_dihapus', 0);
+        $totalGagal   = $request->input('total_gagal', 0);
+        $status       = $request->input('status', 'success');
+
+        \Log::info("[RESET_SEMUA_JARI] Alat: {$device->nama_alat} | Token: {$token} | Berhasil: {$totalDihapus} | Gagal: {$totalGagal}");
+
+        // Reset status alat ke standby
+        DB::table('devices')->where('id', $device->id)->update([
+            'status'               => 'scan',
+            'target_siswa_id'      => null,
+            'target_fingerprint_id'=> null,
+        ]);
+
+        // Tulis notifikasi ke Firebase agar semua browser yang membuka data-siswa ikut reload
+        try {
+            app('firebase.database')->getReference('reset_all_responses/' . $token)->set([
+                'status'        => ($totalGagal == 0) ? 'success' : 'partial',
+                'type'          => $status,
+                'total_dihapus' => (int) $totalDihapus,
+                'total_gagal'   => (int) $totalGagal,
+                'nama_alat'     => $device->nama_alat,
+                'timestamp'     => now()->timestamp,
+            ]);
+            \Log::info("[RESET_SEMUA_JARI] Notifikasi Firebase terkirim ke reset_all_responses/{$token}");
+        } catch (\Exception $e) {
+            \Log::warning("[RESET_SEMUA_JARI] Gagal kirim notifikasi Firebase: " . $e->getMessage());
+        }
+
+        return response()->json([
+            'status'         => 'ok',
+            'message'        => "Konfirmasi reset semua jari diterima. Berhasil: {$totalDihapus}, Gagal: {$totalGagal}",
+            'total_dihapus'  => $totalDihapus,
+            'total_gagal'    => $totalGagal,
+        ], 200);
+    }
+
+    /**
      * =========================================================================
      * INPUT PRESENSI MANUAL OLEH ADMIN DARI WEB
      * =========================================================================

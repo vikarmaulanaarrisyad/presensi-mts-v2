@@ -34,7 +34,7 @@
                         </tr>
                     </thead>
                     <tbody style="font-size: 0.9rem; color: #475569;">
-                        @forelse($kelases as $index => $kls)
+                        @foreach($kelases as $index => $kls)
                             @php
                                 $persen = $kls->persentase_hadir ?? 0;
                                 if ($persen >= 90) {
@@ -76,11 +76,7 @@
                                 </td>
                                 @endif
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">Belum ada data kelas yang terdaftar.</td>
-                            </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
