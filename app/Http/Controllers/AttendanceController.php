@@ -48,7 +48,13 @@ class AttendanceController extends Controller
             return response()->json(['status' => 'error', 'message' => 'ID Sidik Jari tidak terdaftar.'], 404);
         }
 
-        $waktu = Carbon::now('Asia/Jakarta');
+        // Jika ada waktu_absen dari request (misal dari simulator ESP32), gunakan itu. Jika tidak, pakai waktu server.
+        $waktuAbsenReq = $request->input('waktu_absen');
+        if ($waktuAbsenReq) {
+            $waktu = Carbon::parse($waktuAbsenReq, 'Asia/Jakarta');
+        } else {
+            $waktu = Carbon::now('Asia/Jakarta');
+        }
         $jamSekarang = $waktu->format('H:i:s');
 
         // AMBIL JADWAL
