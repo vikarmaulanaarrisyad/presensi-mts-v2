@@ -99,7 +99,12 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-muted text-uppercase">Wali Kelas</label>
-                                <input type="text" name="wali_kelas" class="form-control py-2.5" placeholder="Nama lengkap wali kelas" required>
+                                <select name="wali_kelas" class="form-select py-2.5" required>
+                                    <option value="">-- Pilih Wali Kelas --</option>
+                                    @foreach($gurus as $guru)
+                                        <option value="{{ $guru->name }}">{{ $guru->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -138,7 +143,12 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small text-muted text-uppercase">Wali Kelas</label>
-                                <input type="text" name="wali_kelas" class="form-control py-2.5" value="{{ $kls->wali_kelas }}" required>
+                                <select name="wali_kelas" class="form-select py-2.5" required>
+                                    <option value="">-- Pilih Wali Kelas --</option>
+                                    @foreach($gurus as $guru)
+                                        <option value="{{ $guru->name }}" {{ $kls->wali_kelas == $guru->name ? 'selected' : '' }}>{{ $guru->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">

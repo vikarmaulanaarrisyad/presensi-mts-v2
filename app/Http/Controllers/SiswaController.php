@@ -739,9 +739,10 @@ class SiswaController extends Controller
         }
 
         $siswas = DB::table('siswas')->get();
+        $gurus  = DB::table('users')->whereIn('role', ['guru', 'kepsek'])->orderBy('name')->get();
         $role   = session('user_role');
 
-        return view('data-kelas', compact('kelases', 'siswas', 'role'));
+        return view('data-kelas', compact('kelases', 'siswas', 'gurus', 'role'));
     }
 
     public function storeKelas(Request $request)
