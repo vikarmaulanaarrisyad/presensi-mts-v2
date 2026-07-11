@@ -102,6 +102,11 @@ Route::get('/siswa/notif-wa/{id}', [SiswaController::class, 'notif_wa'])->name('
 Route::post('/simpan-izin', [SiswaController::class, 'simpanIzin'])->name('attendance.storeManual');
 Route::post('/siswa/pengajuan-izin', [SiswaController::class, 'pengajuanIzinSiswa'])->name('siswa.pengajuan_izin');
 
+// ROUTE PERSETUJUAN IZIN
+Route::get('/persetujuan-izin', [SiswaController::class, 'persetujuanIzinIndex'])->name('persetujuan.izin.index');
+Route::post('/persetujuan-izin/approve/{id}', [SiswaController::class, 'approveIzin'])->name('persetujuan.izin.approve');
+Route::post('/persetujuan-izin/reject/{id}', [SiswaController::class, 'rejectIzin'])->name('persetujuan.izin.reject');
+
 Route::get('/admin/rekap-pdf', [SiswaController::class, 'laporanIndex'])->name('admin.rekap.pdf');
 Route::get('/siswa/rekap-pdf', [SiswaController::class, 'laporanIndex'])->name('siswa.rekap_pdf');
 Route::post('/admin/rekap-pdf/download', [SiswaController::class, 'rekapPdf'])->name('admin.rekap.download');

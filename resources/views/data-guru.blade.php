@@ -23,7 +23,8 @@
                                 <th class="text-secondary fw-bold text-uppercase" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">No</th>
                                 <th class="text-secondary fw-bold text-uppercase" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">Nama Lengkap</th>
                                 <th class="text-secondary fw-bold text-uppercase" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">Email / Username</th>
-                                <th class="text-secondary fw-bold text-uppercase" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">Role Jabatan</th>
+                                <th class="text-secondary fw-bold text-uppercase" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">Jabatan</th>
+                                <th class="text-secondary fw-bold text-uppercase" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">Role</th>
                                 <th class="text-secondary fw-bold text-uppercase text-end" style="font-size:0.75rem; border-bottom: 2px solid #e2e8f0;">Aksi</th>
                             </tr>
                         </thead>
@@ -35,6 +36,7 @@
                                     <div class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $guru->name }}</div>
                                 </td>
                                 <td class="text-muted font-mono-custom" style="font-size: 0.85rem;">{{ $guru->email }}</td>
+                                <td class="text-muted" style="font-size: 0.85rem;">{{ $guru->jabatan ?? '-' }}</td>
                                 <td>
                                     @if($guru->role == 'kepsek')
                                         <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2 font-mono-custom fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-crown me-1"></i> Kepala Sekolah</span>
@@ -80,11 +82,15 @@
                                 <input type="email" name="email" class="form-control py-2.5" value="{{ $guru->email }}" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold small text-muted text-uppercase">Role Jabatan</label>
+                                <label class="form-label fw-bold small text-muted text-uppercase">Role Akun</label>
                                 <select name="role" class="form-select py-2.5" required>
                                     <option value="guru" {{ $guru->role == 'guru' ? 'selected' : '' }}>Guru</option>
                                     <option value="kepsek" {{ $guru->role == 'kepsek' ? 'selected' : '' }}>Kepala Sekolah</option>
                                 </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Jabatan (Opsional)</label>
+                                <input type="text" name="jabatan" class="form-control py-2.5" placeholder="Contoh: Tenaga Usaha TU, Wali Kelas, dll" value="{{ $guru->jabatan }}">
                             </div>
                             <div class="mb-4">
                                 <label class="form-label fw-bold small text-muted text-uppercase">Ganti Password (Opsional)</label>
@@ -143,12 +149,16 @@
                                 <label class="form-label fw-bold small text-muted text-uppercase">Email / Username</label>
                                 <input type="email" name="email" class="form-control py-2.5" placeholder="email@sekolah.com" required>
                             </div>
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-muted text-uppercase">Role Jabatan</label>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Role Akun</label>
                                 <select name="role" class="form-select py-2.5" required>
                                     <option value="guru" selected>Guru</option>
                                     <option value="kepsek">Kepala Sekolah</option>
                                 </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Jabatan (Opsional)</label>
+                                <input type="text" name="jabatan" class="form-control py-2.5" placeholder="Contoh: Tenaga Usaha TU, Wali Kelas, dll">
                             </div>
                             <button type="submit" class="btn btn-success w-100 fw-bold py-2.5 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2"><i class="fa-solid fa-save"></i> Simpan Data</button>
                         </form>

@@ -394,6 +394,7 @@ void kirimPresensi(int id, String timeStr) {
 
   // 1. KIRIM KE LARAVEL TERLEBIH DAHULU
   HTTPClient http;
+  http.setReuse(false);
   String targetUrl = baseUrl + "/presensi";
   http.setTimeout(10000); // 10 detik
   
@@ -558,6 +559,7 @@ void cekDataFirebase() {
 
 void cekStatusServer() {
   HTTPClient http;
+  http.setReuse(false);
   String targetUrl = baseUrl + "/cek-status-alat?device_token=" + deviceToken;
   http.setTimeout(3000); 
   
@@ -716,6 +718,7 @@ void prosesHapus(int id, int commandId) {
 void konfirmasiEnrollServer(int id, String polaHex, String status) {
   // 1. KIRIM KONFIRMASI KE LARAVEL TERLEBIH DAHULU
   HTTPClient http; 
+  http.setReuse(false);
   String targetUrl = baseUrl + "/konfirmasi-enroll"; 
   http.setTimeout(5000); 
   
@@ -765,6 +768,7 @@ void konfirmasiEnrollServer(int id, String polaHex, String status) {
 void konfirmasiHapusServer(int id, int commandId) { 
   // 1. KIRIM KONFIRMASI KE LARAVEL TERLEBIH DAHULU
   HTTPClient http; 
+  http.setReuse(false);
   String targetUrl = baseUrl + "/konfirmasi-hapus";
   http.setTimeout(4000); 
   
@@ -896,6 +900,7 @@ void prosesHapusSemuaJari(FirebaseJsonArray& ids) {
 
     // Kirim konfirmasi ke Laravel
     HTTPClient httpWipe;
+    httpWipe.setReuse(false);
     String wipeUrl = baseUrl + "/konfirmasi-reset-semua";
     httpWipe.setTimeout(5000);
   
@@ -972,6 +977,7 @@ void prosesHapusSemuaJari(FirebaseJsonArray& ids) {
 
   // Kirim konfirmasi ke Laravel
   HTTPClient http;
+  http.setReuse(false);
   String targetUrl = baseUrl + "/konfirmasi-reset-semua";
   http.setTimeout(5000);
     

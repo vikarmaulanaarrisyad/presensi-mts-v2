@@ -32,13 +32,15 @@ class GuruController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'role' => 'required|in:guru,kepsek'
+            'role' => 'required|in:guru,kepsek',
+            'jabatan' => 'nullable|string|max:255'
         ]);
 
         DB::table('users')->insert([
             'name' => $request->name,
             'email' => $request->email,
             'role' => $request->role,
+            'jabatan' => $request->jabatan,
             'password' => Hash::make('12345678'),
             'created_at' => now(),
             'updated_at' => now()
@@ -54,13 +56,15 @@ class GuruController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$id,
-            'role' => 'required|in:guru,kepsek'
+            'role' => 'required|in:guru,kepsek',
+            'jabatan' => 'nullable|string|max:255'
         ]);
 
         $updateData = [
             'name' => $request->name,
             'email' => $request->email,
             'role' => $request->role,
+            'jabatan' => $request->jabatan,
             'updated_at' => now()
         ];
 

@@ -28,13 +28,21 @@
     </style>
 </head>
 <body>
-
-    <div class="kop-surat">
-        <h2>Yayasan Mambaul Ulum Tegal</h2>
-        <h3>MTs Mambaul Ulum Kota Tegal</h3>
-        <p>Alamat: Jl. Nyi Ageng Serang, Tunon, Kec. Tegal Selatan, Kota Tegal 52135</p>
-    </div>
-
+    <table class="kop-surat" style="border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; width: 100%; border: none;">
+        <tr>
+            <td style="width: 15%; text-align: center; border: none;">
+                @if(!empty($logoBase64))
+                    <img src="{{ $logoBase64 }}" alt="Logo MTs" style="width: 80px; height: auto;">
+                @endif
+            </td>
+            <td style="width: 70%; text-align: center; border: none;">
+                <h2 style="margin: 0; font-size: 20px; text-transform: uppercase;">Yayasan Mambaul Ulum Tegal</h2>
+                <h3 style="margin: 5px 0; font-size: 16px; text-transform: uppercase;">MTs Mambaul Ulum Kota Tegal</h3>
+                <p style="margin: 0; font-size: 12px; font-style: italic;">Alamat: Jl. Nyi Ageng Serang, Tunon, Kec. Tegal Selatan, Kota Tegal 52135</p>
+            </td>
+            <td style="width: 15%; border: none;"></td>
+        </tr>
+    </table>
     <div class="judul-laporan">
         Laporan Rekapitulasi Absensi Kehadiran Siswa<br>
         Sistem Sinkronisasi Cloud & Rekap Otomatis
@@ -84,6 +92,16 @@
             </tr>
             @endforelse
         </tbody>
+    </table>
+
+    <table style="width: 100%; border: none; margin-top: 30px;">
+        <tr>
+            <td style="width: 60%; border: none;"></td>
+            <td style="width: 40%; text-align: center; border: none;">
+                <p style="margin-bottom: 60px; font-size: 12px;">Tegal, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('DD MMMM YYYY') }}<br>Tenaga Usaha (TU)</p>
+                <p style="font-weight: bold; text-decoration: underline; font-size: 12px;">{{ $namaAdminTU }}</p>
+            </td>
+        </tr>
     </table>
 
     <script>

@@ -56,6 +56,7 @@ class SiswaController extends Controller
         $rekapHariIni = DB::table('attendances')
             ->select('status_masuk as status', DB::raw('count(*) as total'))
             ->where('tanggal', $hariIni->toDateString())
+            ->where('approval_status', 'Approved')
             ->groupBy('status_masuk')
             ->pluck('total', 'status');
 
@@ -98,9 +99,9 @@ class SiswaController extends Controller
 
         if (session('user_role') === 'murid') {
             $siswaData = DB::table('siswas')->where('id', session('user_id'))->first();
-            $totalHadirKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status_masuk', 'Hadir')->count();
-            $totalIzinKu = DB::table('attendances')->where('siswa_id', session('user_id'))->whereIn('status_masuk', ['Izin', 'Sakit'])->count();
-            $totalAlpaKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status_masuk', 'Alpa')->count();
+            $totalHadirKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status_masuk', 'Hadir')->where('approval_status', 'Approved')->count();
+            $totalIzinKu = DB::table('attendances')->where('siswa_id', session('user_id'))->whereIn('status_masuk', ['Izin', 'Sakit'])->where('approval_status', 'Approved')->count();
+            $totalAlpaKu = DB::table('attendances')->where('siswa_id', session('user_id'))->where('status_masuk', 'Alpa')->where('approval_status', 'Approved')->count();
             $logAbsensiKu = DB::table('attendances')->where('siswa_id', session('user_id'))->orderBy('tanggal', 'desc')->limit(20)->get();
             return view('dashboard_siswa', compact('siswaData', 'totalHadirKu', 'totalIzinKu', 'totalAlpaKu', 'logAbsensiKu'));
         }
@@ -733,6 +734,7 @@ class SiswaController extends Controller
                     ->whereIn('siswa_id', $siswaIdList)
                     ->whereDate('tanggal', $hariIni)
                     ->where('status_masuk', 'Hadir')
+                    ->where('approval_status', 'Approved')
                     ->count();
                 $kls->persentase_hadir = round(($hadirHariIni / $totalSiswaKelas) * 100);
             }
@@ -877,13 +879,29 @@ class SiswaController extends Controller
         }
         
         $dataAbsensi  = $query->orderBy('siswas.kelas')->orderBy('siswas.name')->get();
-        $totalHadir   = $dataAbsensi->whereIn('status_masuk', ['Hadir', 'Masuk', 'Terlambat'])->count();
-        $totalIzin    = $dataAbsensi->whereIn('status_masuk', ['Izin', 'Sakit'])->count();
-        $totalAlpa    = $dataAbsensi->where('status_masuk', 'Alpa')->count();
+        $totalHadir   = $dataAbsensi->where('approval_status', 'Approved')->whereIn('status_masuk', ['Hadir', 'Masuk', 'Terlambat'])->count();
+        $totalIzin    = $dataAbsensi->where('approval_status', 'Approved')->whereIn('status_masuk', ['Izin', 'Sakit'])->count();
+        $totalAlpa    = $dataAbsensi->where('approval_status', 'Approved')->where('status_masuk', 'Alpa')->count();
         
         $periodeFormat = Carbon::parse($startDate)->locale('id')->isoFormat('DD MMMM YYYY') . ' s/d ' . Carbon::parse($endDate)->locale('id')->isoFormat('DD MMMM YYYY');
         
-        $pdfData = compact('dataAbsensi', 'startDate', 'endDate', 'kelas', 'totalHadir', 'totalIzin', 'totalAlpa', 'periodeFormat');
+        // Cari admin TU dari tabel users (berdasarkan kolom jabatan) atau fallback ke admin
+        $adminTU = DB::table('users')->where('jabatan', 'Tenaga Usaha TU')->first();
+        if (!$adminTU) {
+            $adminTU = DB::table('admin')->first();
+        }
+        $namaAdminTU = $adminTU ? ($adminTU->name ?? $adminTU->nama ?? 'Administrator TU') : 'Administrator TU';
+
+        // Logo image base64 or path
+        $logoPath = public_path('img/mts.webp');
+        if (file_exists($logoPath)) {
+            $logoData = base64_encode(file_get_contents($logoPath));
+            $logoBase64 = 'data:image/webp;base64,' . $logoData;
+        } else {
+            $logoBase64 = '';
+        }
+        
+        $pdfData = compact('dataAbsensi', 'startDate', 'endDate', 'kelas', 'totalHadir', 'totalIzin', 'totalAlpa', 'periodeFormat', 'namaAdminTU', 'logoBase64');
         
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('rekap_pdf', $pdfData);
         $pdf->setPaper('a4', 'landscape');
@@ -931,10 +949,65 @@ class SiswaController extends Controller
             'status_masuk'     => $request->status,
             'keterangan_masuk' => $request->keterangan,
             'sumber' => 'Manual',
+            'approval_status' => 'Pending',
             'created_at' => Carbon::now('Asia/Jakarta'),
             'updated_at' => Carbon::now('Asia/Jakarta'),
         ]);
 
-        return redirect()->back()->with('success', 'Pengajuan ' . $request->status . ' Anda berhasil dikirim ke Admin!');
+        return redirect()->back()->with('success', 'Pengajuan ' . $request->status . ' Anda berhasil dikirim ke Admin dan menunggu persetujuan!');
+    }
+
+    public function persetujuanIzinIndex()
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return $redirect;
+
+        if (session('user_role') !== 'kepsek' && session('user_role') !== 'admin') {
+            return redirect('/')->with('error', 'Akses ditolak! Khusus Admin atau Kepsek.');
+        }
+
+        $pengajuanPending = DB::table('attendances')
+            ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
+            ->select('attendances.*', 'siswas.name as nama_siswa', 'siswas.nis', 'siswas.kelas')
+            ->where('attendances.approval_status', 'Pending')
+            ->orderBy('attendances.created_at', 'desc')
+            ->get();
+
+        return view('persetujuan-izin', compact('pengajuanPending'));
+    }
+
+    public function approveIzin($id)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return $redirect;
+
+        if (session('user_role') !== 'kepsek' && session('user_role') !== 'admin') {
+            return redirect()->back()->with('error', 'Akses ditolak!');
+        }
+
+        DB::table('attendances')->where('id', $id)->update([
+            'approval_status' => 'Approved',
+            'updated_at' => Carbon::now('Asia/Jakarta')
+        ]);
+
+        return redirect()->back()->with('success', 'Pengajuan berhasil disetujui!');
+    }
+
+    public function rejectIzin($id)
+    {
+        $redirect = $this->cekLogin();
+        if ($redirect) return $redirect;
+
+        if (session('user_role') !== 'kepsek' && session('user_role') !== 'admin') {
+            return redirect()->back()->with('error', 'Akses ditolak!');
+        }
+
+        DB::table('attendances')->where('id', $id)->update([
+            'approval_status' => 'Rejected',
+            'status_masuk'    => 'Alpa',
+            'updated_at'      => Carbon::now('Asia/Jakarta')
+        ]);
+
+        return redirect()->back()->with('success', 'Pengajuan ditolak dan diubah menjadi Alpa.');
     }
 }
