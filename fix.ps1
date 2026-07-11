@@ -1,0 +1,1 @@
+$files = Get-ChildItem -Path resources/views -Recurse -Filter *.blade.php; foreach ($file in $files) { $c = Get-Content $file.FullName; $nc = $c -replace 'mts\.WEBP', 'mts.webp'; Set-Content -Path $file.FullName -Value $nc }

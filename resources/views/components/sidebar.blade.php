@@ -1,6 +1,6 @@
 <div class="sidebar">
     <div class="brand-wrapper">
-        <img src="{{ asset('img/mts.WEBP') }}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/a7/Logo_Kementerian_Agama.svg'" class="brand-logo-frame" alt="Logo MTs">
+        <img src="{{ asset('img/mts.webp') }}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/a7/Logo_Kementerian_Agama.svg'" class="brand-logo-frame" alt="Logo MTs">
         <div class="brand-text">
             <span class="brand-title">MTs Mambaul Ulum</span>
             <span class="brand-subtitle">KOTA TEGAL</span>
@@ -9,7 +9,7 @@
 
     <div class="menu-container">
         <div class="menu-group-title">Menu Utama</div>
-        <a href="/siswa" class="menu-link {{ request()->is('siswa') ? 'active' : '' }}">
+        <a href="{{ route('monitoring.index') }}" class="menu-link {{ request()->routeIs('monitoring.index') || request()->is('siswa') ? 'active' : '' }}">
             <i class="fa-solid fa-chart-pie"></i> Monitoring Real-Time
         </a>
         <a href="{{ route('data.siswa') }}" class="menu-link {{ request()->routeIs('data.siswa') ? 'active' : '' }}">

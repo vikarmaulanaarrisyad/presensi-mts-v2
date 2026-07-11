@@ -184,7 +184,7 @@
     <div class="sidebar">
         <div class="sidebar-brand">
             <div class="avatar-circle d-flex align-items-center justify-content-center overflow-hidden">
-                <img src="{{ asset('img/mts.WEBP') }}" alt="Logo MTS Mambaul Ulum" class="w-100 h-100 object-fit-cover">
+                <img src="{{ asset('img/mts.webp') }}" alt="Logo MTS Mambaul Ulum" class="w-100 h-100 object-fit-cover">
             </div>
             <div class="brand-title">MTS MAMBAUL ULUM</div>
             <div class="brand-subtitle">KOTA TEGAL</div>

@@ -228,7 +228,7 @@
     <div class="sidebar">
         <div class="sidebar-brand">
             <div class="avatar-circle d-flex align-items-center justify-content-center overflow-hidden">
-                <img src="{{ asset('img/mts.WEBP') }}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/a7/Logo_Kementerian_Agama.svg'" alt="Logo MTS Mambaul Ulum" class="w-100 h-100 object-fit-cover">
+                <img src="{{ asset('img/mts.webp') }}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/a7/Logo_Kementerian_Agama.svg'" alt="Logo MTS Mambaul Ulum" class="w-100 h-100 object-fit-cover">
             </div>
             <div class="brand-title">MTS MAMBAUL ULUM</div>
             <div class="brand-subtitle">KOTA TEGAL</div>

@@ -731,8 +731,8 @@ class SiswaController extends Controller
             } else {
                 $hadirHariIni = DB::table('attendances')
                     ->whereIn('siswa_id', $siswaIdList)
-                    ->whereDate('created_at', $hariIni)
-                    ->where('status', 'Hadir')
+                    ->whereDate('tanggal', $hariIni)
+                    ->where('status_masuk', 'Hadir')
                     ->count();
                 $kls->persentase_hadir = round(($hadirHariIni / $totalSiswaKelas) * 100);
             }

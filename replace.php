@@ -1,0 +1,1 @@
+ = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(" c:/laragon/www/presensi-mts/resources/views\)); foreach ( as ) { if (->isFile() && strpos(->getFilename(), \.blade.php\) !== false) { = file_get_contents(->getRealPath()); = str_replace(\.WEBP\, \.webp\, ); if ( !== ) { file_put_contents(->getRealPath(), ); echo \Updated \ . ->getRealPath() . \\n\; } } }

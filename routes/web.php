@@ -16,6 +16,19 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // =====================================================
+// ROUTE BANTUAN ARTISAN (DEV)
+// =====================================================
+Route::get('/migrate', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
+    return "Migrate & Seed berhasil! <a href='/'>Kembali ke Login</a>";
+});
+
+Route::get('/storage-link', function () {
+    \Illuminate\Support\Facades\Artisan::call('storage:link');
+    return "Storage Link berhasil dibuat! <a href='/'>Kembali ke Login</a>";
+});
+
+// =====================================================
 // ROUTE DASHBOARD & MONITORING
 // =====================================================
 Route::get('/dashboard-superadmin', [SuperadminController::class, 'index'])->name('superadmin.dashboard');

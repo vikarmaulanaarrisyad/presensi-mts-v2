@@ -307,7 +307,7 @@
     <div class="container d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-3">
             <div style="width:40px; height:40px; background:white; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
-                <img src="{{ asset('img/mts.WEBP') }}" alt="Logo" style="width: 28px; height: 28px; object-fit: contain;">
+                <img src="{{ asset('img/mts.webp') }}" alt="Logo" style="width: 28px; height: 28px; object-fit: contain;">
             </div>
             <div>
                 <h5 class="navbar-brand-text">PortalSiswa</h5>
