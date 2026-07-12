@@ -249,6 +249,9 @@
         <a class="nav-link-custom {{ Request::is('data-kelas') ? 'active' : '' }}" href="{{ route('data.kelas') }}">
             <i class="fa-solid fa-layer-group"></i> Data Manajemen Kelas
         </a>
+        <a class="nav-link-custom {{ Request::is('persetujuan-izin') ? 'active' : '' }}" href="{{ route('persetujuan.izin.index') }}">
+            <i class="fa-solid fa-clipboard-check"></i> Persetujuan Izin
+        </a>
         @endif
         
         <a class="nav-link-custom active" href="{{ session('user_role') === 'murid' ? route('siswa.rekap_pdf') : route('admin.rekap.pdf') }}">

@@ -59,12 +59,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
-                                    <i class="fa-solid fa-check-circle fs-3 mb-2 text-success opacity-50"></i><br>
-                                    Tidak ada pengajuan yang perlu disetujui saat ini.
-                                </td>
-                            </tr>
+                            <!-- DataTables akan meng-handle pesan kosong secara otomatis -->
                         @endforelse
                     </tbody>
                 </table>
@@ -80,7 +75,8 @@
             $(document).ready(function() {
                 $('#tabelPersetujuan').DataTable({
                     "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
+                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json",
+                        "emptyTable": "<div class='text-center py-4 text-muted'><i class='fa-solid fa-check-circle fs-3 mb-2 text-success opacity-50'></i><br>Tidak ada pengajuan yang perlu disetujui saat ini.</div>"
                     },
                     "pageLength": 10,
                     "ordering": true

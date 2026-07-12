@@ -22,8 +22,11 @@
             <i class="fa-solid fa-layer-group"></i> Data Manajemen Kelas
         </a>
         
-        {{-- Hak Akses Rekap Laporan untuk Admin dan Kepsek --}}
+        {{-- Hak Akses untuk Admin dan Kepsek --}}
         @if(session('user_role') === 'admin' || session('user_role') === 'kepsek')
+        <a href="{{ route('persetujuan.izin.index') }}" class="menu-link {{ request()->routeIs('persetujuan.izin.index') || request()->is('persetujuan-izin') ? 'active' : '' }}">
+            <i class="fa-solid fa-clipboard-check"></i> Persetujuan Izin
+        </a>
         <a href="{{ route('siswa.rekap_pdf') }}" class="menu-link {{ request()->routeIs('siswa.rekap_pdf') ? 'active' : '' }}">
             <i class="fa-solid fa-file-invoice"></i> Rekap Presensi / Laporan
         </a>

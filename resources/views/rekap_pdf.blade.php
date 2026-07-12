@@ -6,12 +6,13 @@
     <title>Rekap Absensi MTs Mambaul Ulum Kota Tegal</title>
     <style>
         body { font-family: 'Arial', sans-serif; color: #333; line-height: 1.4; padding: 20px; }
-        .kop-surat { text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .kop-surat h2 { margin: 0; font-size: 20px; text-transform: uppercase; }
-        .kop-surat h3 { margin: 5px 0; font-size: 16px; text-transform: uppercase; }
-        .kop-surat p { margin: 0; font-size: 12px; font-style: italic; }
-        .judul-laporan { text-align: center; margin-bottom: 20px; text-transform: uppercase; font-size: 14px; font-weight: bold; }
-        .sub-judul-laporan { font-size: 11px; color: #555; text-transform: none; font-weight: normal; margin-top: 5px; }
+        .kop-surat { width: 100%; text-align: center; border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 25px; border-collapse: separate; }
+        .kop-surat td { border: none !important; padding: 0 10px; vertical-align: middle; }
+        .kop-surat h2 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; line-height: 1.2; }
+        .kop-surat h3 { margin: 5px 0; font-size: 18px; text-transform: uppercase; font-weight: bold; line-height: 1.2; }
+        .kop-surat p { margin: 0; font-size: 13px; font-style: normal; line-height: 1.4; }
+        .judul-laporan { text-align: center; margin-bottom: 25px; text-transform: uppercase; font-size: 15px; font-weight: bold; }
+        .sub-judul-laporan { font-size: 12px; color: #444; text-transform: none; font-weight: normal; margin-top: 6px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
         th, td { border: 1px solid #000; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
@@ -28,19 +29,19 @@
     </style>
 </head>
 <body>
-    <table class="kop-surat" style="border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; width: 100%; border: none;">
+    <table class="kop-surat">
         <tr>
-            <td style="width: 15%; text-align: center; border: none;">
+            <td style="width: 15%; text-align: center;">
                 @if(!empty($logoBase64))
-                    <img src="{{ $logoBase64 }}" alt="Logo MTs" style="width: 80px; height: auto;">
+                    <img src="{{ $logoBase64 }}" alt="Logo MTs" style="width: 90px; height: auto;">
                 @endif
             </td>
-            <td style="width: 70%; text-align: center; border: none;">
-                <h2 style="margin: 0; font-size: 20px; text-transform: uppercase;">Yayasan Mambaul Ulum Tegal</h2>
-                <h3 style="margin: 5px 0; font-size: 16px; text-transform: uppercase;">MTs Mambaul Ulum Kota Tegal</h3>
-                <p style="margin: 0; font-size: 12px; font-style: italic;">Alamat: Jl. Nyi Ageng Serang, Tunon, Kec. Tegal Selatan, Kota Tegal 52135</p>
+            <td style="width: 70%; text-align: center;">
+                <h2>Yayasan Mambaul Ulum Tegal</h2>
+                <h3>MTs Mambaul Ulum Kota Tegal</h3>
+                <p>Alamat: Jl. Nyi Ageng Serang, Tunon, Kec. Tegal Selatan, Kota Tegal 52135</p>
             </td>
-            <td style="width: 15%; border: none;"></td>
+            <td style="width: 15%;"></td>
         </tr>
     </table>
     <div class="judul-laporan">

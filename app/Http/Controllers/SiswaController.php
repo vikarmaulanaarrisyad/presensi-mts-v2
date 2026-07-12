@@ -277,9 +277,9 @@ class SiswaController extends Controller
                 // Broadcast ke masing-masing alat melalui Firebase
                 app('firebase.database')->getReference('commands/' . $device->device_token)->set([
                     'mode' => 'sync',
-                    'fingerprint_id' => $siswa->fingerprint_id,
+                    'fingerprint_id' => (int) $siswa->fingerprint_id,
                     'pola_sidik_jari' => $siswa->pola_sidik_jari,
-                    'timestamp' => now()->timestamp
+                    'timestamp' => (int) now()->timestamp
                 ]);
                 $count++;
             } catch (\Exception $e) {
@@ -326,9 +326,9 @@ class SiswaController extends Controller
         try {
             app('firebase.database')->getReference('commands/' . $device->device_token)->set([
                 'mode' => 'delete',
-                'fingerprint_id' => $siswa->fingerprint_id,
-                'command_id' => time(),
-                'timestamp' => now()->timestamp
+                'fingerprint_id' => (int) $siswa->fingerprint_id,
+                'command_id' => (int) time(),
+                'timestamp' => (int) now()->timestamp
             ]);
         } catch (\Exception $e) {}
 
@@ -386,9 +386,9 @@ class SiswaController extends Controller
                     if($dev->device_token) {
                         $fb->getReference('commands/' . $dev->device_token)->set([
                             'mode' => 'delete',
-                            'fingerprint_id' => $siswa->fingerprint_id,
-                            'command_id' => time(),
-                            'timestamp' => now()->timestamp
+                            'fingerprint_id' => (int) $siswa->fingerprint_id,
+                            'command_id' => (int) time(),
+                            'timestamp' => (int) now()->timestamp
                         ]);
                     }
                 }
@@ -532,7 +532,7 @@ class SiswaController extends Controller
         }
 
         $devices = DB::table('devices')->get();
-        $fingerprintIds = $siswasWithJari->pluck('fingerprint_id')->filter()->unique()->values();
+        $fingerprintIds = $siswasWithJari->pluck('fingerprint_id')->filter()->map(function($id) { return (int) $id; })->unique()->values();
 
         // 1. Kirim perintah delete_all ke setiap alat ESP32 via Firebase
         $berhasilAlat = 0;
@@ -609,7 +609,13 @@ class SiswaController extends Controller
                 return '<span style="font-weight: 700;">' . $log->nama_siswa . '</span>';
             })
             ->editColumn('waktu_masuk', function ($log) {
-                if ($log->waktu_masuk) {
+                if ($log->status_masuk === 'Izin' || $log->status_masuk === 'Sakit') {
+                    return '<span class="status-badge badge-premium-izin" style="background: rgba(245, 158, 11, 0.1) !important; color: #d97706 !important; border-color: rgba(245, 158, 11, 0.2) !important;"><i class="fa-solid fa-envelope"></i> ' . $log->status_masuk . '</span>' .
+                           '<div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">' . ($log->keterangan_masuk ?? '-') . '</div>';
+                } elseif ($log->status_masuk === 'Alpa') {
+                    return '<span class="status-badge badge-premium-alpa"><i class="fa-solid fa-xmark"></i> Alpa</span>' .
+                           '<div style="font-size: 11px; color:#64748b; margin-top:4px; font-weight:600;">' . ($log->keterangan_masuk ?? '-') . '</div>';
+                } elseif ($log->waktu_masuk) {
                     $isTerlambat = (strtolower($log->keterangan_masuk) === 'terlambat');
                     $cssMasuk = $isTerlambat ? 'badge-premium-izin' : 'badge-premium-hadir';
                     $iconMasuk = $isTerlambat ? 'fa-clock' : 'fa-right-to-bracket';
@@ -659,16 +665,22 @@ class SiswaController extends Controller
 
         $hariIni = Carbon::today('Asia/Jakarta');
         
-        $query = DB::table('attendances')
-            ->join('siswas', 'attendances.siswa_id', '=', 'siswas.id')
+        $query = DB::table('siswas')
+            ->leftJoin('attendances', function($join) use ($hariIni) {
+                $join->on('siswas.id', '=', 'attendances.siswa_id')
+                     ->where('attendances.tanggal', '=', $hariIni->toDateString());
+            })
             ->select(
-                'attendances.*',
+                'attendances.waktu_masuk',
+                'attendances.waktu_pulang',
+                'attendances.status_masuk',
+                'attendances.status_pulang',
+                'attendances.tanggal',
                 'siswas.id as siswa_id', 
                 'siswas.name as nama_siswa', 
                 'siswas.kelas'
             )
-            ->where('attendances.tanggal', $hariIni->toDateString())
-            ->orderBy('attendances.updated_at', 'desc');
+            ->orderByRaw('attendances.updated_at IS NULL, attendances.updated_at DESC, siswas.name ASC');
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -685,7 +697,7 @@ class SiswaController extends Controller
             ->editColumn('status', function ($log) {
                 $status = $log->waktu_pulang ? $log->status_pulang : $log->status_masuk;
                 
-                if($status === 'Hadir') {
+                if($status === 'Hadir' || $status === 'Terlambat' || $status === 'Masuk') {
                     return '<span class="badge bg-success bg-opacity-10 text-success border px-2 py-1 fw-semibold"><i class="fa-solid fa-check"></i> Hadir</span>';
                 } elseif($status === 'Izin' || $status === 'Sakit') {
                     return '<span class="badge bg-warning bg-opacity-10 text-warning border px-2 py-1 fw-semibold"><i class="fa-solid fa-envelope"></i> ' . $status . '</span>';
@@ -886,7 +898,11 @@ class SiswaController extends Controller
         $periodeFormat = Carbon::parse($startDate)->locale('id')->isoFormat('DD MMMM YYYY') . ' s/d ' . Carbon::parse($endDate)->locale('id')->isoFormat('DD MMMM YYYY');
         
         // Cari admin TU dari tabel users (berdasarkan kolom jabatan) atau fallback ke admin
-        $adminTU = DB::table('users')->where('jabatan', 'Tenaga Usaha TU')->first();
+        $adminTU = DB::table('users')
+            ->where('jabatan', 'like', '%Tenaga Usaha%')
+            ->orWhere('jabatan', 'like', '%TU%')
+            ->first();
+            
         if (!$adminTU) {
             $adminTU = DB::table('admin')->first();
         }
