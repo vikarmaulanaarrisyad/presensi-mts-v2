@@ -422,6 +422,7 @@ void kirimPresensi(int id, String timeStr) {
   String requestBody; serializeJson(doc, requestBody);
   int httpResponseCode = http.POST(requestBody);
   String response = http.getString();
+  http.end(); // <-- Segera tutup koneksi HTTP untuk membebaskan memory sebelum memproses Firebase SSL
   
   // 2. CEK RESPONS LARAVEL
   if (httpResponseCode == 200 || httpResponseCode == 201) {
@@ -474,7 +475,6 @@ void kirimPresensi(int id, String timeStr) {
     bunyiBuzzer(3, 80);
   }
   
-  http.end();
   lcdState = 3; 
   lcdTimer = millis();
 }
@@ -581,6 +581,8 @@ void cekStatusServer() {
   
   if (httpResponseCode == 200) { 
     String response = http.getString();
+    http.end(); // <-- Segera tutup koneksi HTTP untuk membebaskan memory sebelum memproses perintah
+
     StaticJsonDocument<256> doc; 
     DeserializationError error = deserializeJson(doc, response);
 
@@ -621,8 +623,9 @@ void cekStatusServer() {
         ESP.restart(); 
       }
     }
+  } else {
+    http.end(); // Tutup jika response bukan 200
   }
-  http.end();
 }
 
 // ================= FUNGSI LOGIKA SIDIK JARI =================
@@ -631,6 +634,7 @@ String getFingerprintTemplateHex() {
   uint8_t p = finger.getModel();
   if (p != FINGERPRINT_OK) return "";
   String templateStr = "";
+  templateStr.reserve(1024); // Mencegah heap fragmentation (kebocoran memori) saat menambah string berkali-kali
   uint32_t startTimeout = millis();
   delay(100); 
   while ((millis() - startTimeout < 1500) && templateStr.length() < 1024) {
@@ -664,7 +668,11 @@ void prosesEnroll(int id) {
       delay(2000); return; 
     }
   }
-  p = finger.image2Tz(1); if (p != FINGERPRINT_OK) return;
+  p = finger.image2Tz(1); 
+  if (p != FINGERPRINT_OK) {
+    konfirmasiEnrollServer(id, "", "failed");
+    return;
+  }
   
   p = finger.fingerSearch();
   if (p == FINGERPRINT_OK) { 
@@ -687,7 +695,11 @@ void prosesEnroll(int id) {
     if (millis() - startWait > 15000) { konfirmasiEnrollServer(id, "", "failed"); return; }
   }
   
-  p = finger.image2Tz(2); if (p != FINGERPRINT_OK) return;
+  p = finger.image2Tz(2); 
+  if (p != FINGERPRINT_OK) {
+    konfirmasiEnrollServer(id, "", "failed");
+    return;
+  }
   p = finger.createModel();
   if (p == FINGERPRINT_OK) {
     String polaHex = getFingerprintTemplateHex();
