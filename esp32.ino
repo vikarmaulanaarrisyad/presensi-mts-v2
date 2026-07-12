@@ -228,7 +228,7 @@ void setup() {
 // ================= LOAD / SAVE KONFIGURASI DARI MEMORI =================
 void loadSavedConfig() {
   Serial.println("\n[MEMORI] --- MEMBACA KONFIGURASI TERSIMPAN ---");
-  preferences.begin("config", true); 
+  preferences.begin("config", false); // Ubah ke false (read/write) agar bisa menimpa konfigurasi lama 
   
   baseUrl = preferences.getString("baseUrl", "http://192.168.0.101:8000/api/fingerprint");
   deviceToken = preferences.getString("deviceToken", "0sL0YVgA6NOupcn5ASiRZ6DwyVgBA0Zo");
@@ -746,6 +746,7 @@ void konfirmasiEnrollServer(int id, String polaHex, String status) {
   
   String requestBody; serializeJson(doc, requestBody);
   int httpResponseCode = http.POST(requestBody); 
+  http.end(); // <-- Pindahkan ke sini untuk membebaskan memory HTTP sebelum buka koneksi SSL Firebase
   
   // 2. JIKA LARAVEL SUKSES, KIRIM KONFIRMASI KE FIREBASE
   if (httpResponseCode == 200 || httpResponseCode == 201) {
@@ -767,8 +768,6 @@ void konfirmasiEnrollServer(int id, String polaHex, String status) {
       }
     }
   }
-  
-  http.end();
 }
 
 void konfirmasiHapusServer(int id, int commandId) { 
@@ -796,6 +795,7 @@ void konfirmasiHapusServer(int id, int commandId) {
   
   String requestBody; serializeJson(doc, requestBody);
   int httpResponseCode = http.POST(requestBody); 
+  http.end(); // <-- Pindahkan ke sini untuk membebaskan memory HTTP sebelum buka koneksi SSL Firebase
   
   // 2. JIKA LARAVEL SUKSES, KIRIM KONFIRMASI KE FIREBASE
   if (httpResponseCode == 200 || httpResponseCode == 201) {
@@ -814,8 +814,6 @@ void konfirmasiHapusServer(int id, int commandId) {
       }
     }
   }
-  
-  http.end();
 }
 
 void prosesSync(int id, String polaHex) {

@@ -521,7 +521,6 @@
                                 <th>Kelas</th>
                                 <th style="width: 140px;">Jam Masuk</th>
                                 <th style="width: 140px;">Jam Pulang</th>
-                                <th style="text-align: center; width: 140px;">Aksi Admin</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -630,8 +629,7 @@
                         {data: 'nama_siswa', name: 'nama_siswa'},
                         {data: 'kelas', name: 'kelas'},
                         {data: 'waktu_masuk', name: 'waktu_masuk'},
-                        {data: 'waktu_pulang', name: 'waktu_pulang'},
-                        {data: 'aksi', name: 'aksi', orderable: false, searchable: false}
+                        {data: 'waktu_pulang', name: 'waktu_pulang'}
                     ]
                 });
             });
