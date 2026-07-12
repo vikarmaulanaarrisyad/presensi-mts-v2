@@ -233,7 +233,13 @@ void loadSavedConfig() {
   baseUrl = preferences.getString("baseUrl", "http://192.168.0.101:8000/api/fingerprint");
   deviceToken = preferences.getString("deviceToken", "0sL0YVgA6NOupcn5ASiRZ6DwyVgBA0Zo");
   firebaseUrl = preferences.getString("firebaseUrl", "presensimts-80d6a-default-rtdb.asia-southeast1.firebasedatabase.app");
-  firebaseSecret = preferences.getString("firebaseSecret", "TULIS_SECRET_DISINI");
+  firebaseSecret = preferences.getString("firebaseSecret", "npNXk0jUBCEGenJTFarI760ALPuPndAThqO8pKg9");
+  
+  // Timpa paksa jika di memori masih tersimpan default yang salah
+  if (firebaseSecret == "TULIS_SECRET_DISINI") {
+    firebaseSecret = "npNXk0jUBCEGenJTFarI760ALPuPndAThqO8pKg9";
+    preferences.putString("firebaseSecret", firebaseSecret);
+  }
   
   preferences.end();
 }
