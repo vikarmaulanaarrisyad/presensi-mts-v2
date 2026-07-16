@@ -30,7 +30,7 @@
             /* --- SIDEBAR --- */
             .sidebar {
                 width: 280px;
-                background: linear-gradient(180deg, #1b4d22 0%, #143a1a 100%);
+                background: #114224;
                 color: white;
                 display: flex;
                 flex-direction: column;
@@ -41,14 +41,13 @@
             }
 
             .brand-wrapper {
-                padding: 24px 20px;
+                padding: 32px 16px 32px 16px; /* 2rem 1rem 2rem 1rem */
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 text-align: center;
-                gap: 12px;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                background: rgba(0, 0, 0, 0.15);
+                gap: 16px; /* 1rem */
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
 
             .brand-logo-frame {
@@ -58,9 +57,6 @@
                 background: white;
                 padding: 6px;
                 border-radius: 50%; 
-                box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-                transition: transform 0.3s ease;
-                border: 3px solid rgba(255, 255, 255, 0.2);
             }
 
             .brand-text {
@@ -70,18 +66,17 @@
             }
 
             .brand-title {
-                font-size: 14px; 
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                line-height: 1.4;
                 color: #ffffff;
+                font-weight: 800;
+                font-size: 0.95rem;
+                letter-spacing: 0.5px;
+                margin-bottom: 2px;
             }
 
             .brand-subtitle {
-                font-size: 11px; 
-                font-weight: 600;
-                color: #34d399; 
+                color: #2ec4b6;
+                font-weight: 700;
+                font-size: 0.75rem;
                 letter-spacing: 0.5px;
             }
 
@@ -92,25 +87,32 @@
             }
 
             .menu-group-title {
-                font-size: 11px; 
-                text-transform: uppercase;
-                letter-spacing: 1.5px;
-                color: rgba(255, 255, 255, 0.45);
-                padding: 0 24px 12px 24px;
+                color: rgba(255, 255, 255, 0.4);
+                font-size: 0.72rem;
                 font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                padding: 0.5rem 1rem;
+                margin-top: 1rem;
+                margin-bottom: 0.25rem;
+                margin-left: 16px;
+                margin-right: 16px;
             }
 
             .menu-link {
                 display: flex;
                 align-items: center;
                 gap: 12px; 
-                padding: 14px 24px; 
-                color: rgba(255, 255, 255, 0.75);
+                padding: 0.75rem 1rem !important;
+                color: rgba(255, 255, 255, 0.75) !important;
                 text-decoration: none;
-                font-size: 14px; 
+                font-size: 0.88rem;
                 font-weight: 500;
-                transition: all 0.3s ease;
-                border-left: 5px solid transparent;
+                border-radius: 8px;
+                transition: all 0.2s ease;
+                margin-bottom: 0.25rem;
+                margin-left: 16px;
+                margin-right: 16px;
             }
 
             .menu-link i {
@@ -120,25 +122,44 @@
             }
 
             .menu-link:hover {
-                background: rgba(255, 255, 255, 0.06);
-                color: white;
+                background: rgba(255, 255, 255, 0.08);
+                color: #ffffff;
             }
 
             .menu-link.active {
-                background: linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
-                color: white;
+                background: #175830;
+                color: #ffffff;
                 font-weight: 600;
-                border-left-color: #34d399;
+                border-left: 4px solid #2ec4b6;
+                border-radius: 4px 8px 8px 4px;
+                padding-left: calc(1rem - 4px) !important;
             }
 
             .sidebar-footer {
-                border-top: 1px solid rgba(255, 255, 255, 0.08);
-                padding: 15px 0;
-                background: rgba(0, 0, 0, 0.1);
+                margin-top: auto;
+                padding-top: 1.5rem;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                margin-left: 16px;
+                margin-right: 16px;
+                margin-bottom: 24px;
             }
 
             .btn-logout {
                 color: #fca5a5 !important;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 0.75rem 1rem;
+                font-size: 0.88rem;
+                font-weight: 600;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: background 0.2s;
+            }
+
+            .btn-logout:hover {
+                background: rgba(239, 68, 68, 0.1);
+                color: #ef4444 !important;
             }
 
             /* --- KONTEN UTAMA --- */
